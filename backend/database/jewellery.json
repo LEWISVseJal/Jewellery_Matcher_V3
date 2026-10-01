@@ -1,328 +1,270 @@
 [
-    {
-        "id": "J001",
-        "name": "Prototype8657",
-        "gender": "Female",
-        "type": "Ring",
-        "subtype": "Other",
-        "collection": "prototype",
-        "description": "",
-        "image": "J001.jpeg"
-    },
-    {
-        "id": "J002",
-        "name": "PrototypeA3274",
-        "gender": "Female",
-        "type": "Ring",
-        "subtype": "Cocktail",
-        "collection": "prototype",
-        "description": "",
-        "image": "J002.jpeg"
-    },
-    {
-        "id": "J003",
-        "name": "PrototypeA1662",
-        "gender": "Female",
-        "type": "Ring",
-        "subtype": "Band",
-        "collection": "prototype",
-        "description": "",
-        "image": "J003.jpeg"
-    },
-    {
-        "id": "J004",
-        "name": "PrototypeA551",
-        "gender": "Female",
-        "type": "Ring",
-        "subtype": "Cluster",
-        "collection": "prototype",
-        "description": "",
-        "image": "J004.jpeg"
-    },
-    {
-        "id": "J005",
-        "name": "Prototype4823",
-        "gender": "Male",
-        "type": "Ring",
-        "subtype": "",
-        "collection": "prototype",
-        "description": "",
-        "image": "J005.jpeg"
-    },
-    {
-        "id": "J006",
-        "name": "PrototypeH-43",
-        "gender": "Female",
-        "type": "Ring",
-        "subtype": "",
-        "collection": "prototype",
-        "description": "",
-        "image": "J006.jpeg"
-    },
-    {
-        "id": "J007",
-        "name": "Prototype3246",
-        "gender": "Male",
-        "type": "Ring",
-        "subtype": "",
-        "collection": "prototype",
-        "description": "",
-        "image": "J007.jpeg"
-    },
-    {
-        "id": "J008",
-        "name": "Prototype684",
-        "gender": "Male",
-        "type": "Ring",
-        "subtype": "",
-        "collection": "prototype",
-        "description": "",
-        "image": "J008.jpeg"
-    },
-    {
-        "id": "J009",
-        "name": "PrototypeA3311",
-        "gender": "Female",
-        "type": "Ring",
-        "subtype": "Solitaire",
-        "collection": "prototype",
-        "description": "",
-        "image": "J009.jpeg"
-    },
-    {
-        "id": "J010",
-        "name": "Prototype4711",
-        "gender": "Female",
-        "type": "Ring",
-        "subtype": "Cocktail",
-        "collection": "prototype",
-        "description": "",
-        "image": "J010.jpeg"
-    },
-    {
-        "id": "J011",
-        "name": "Prototype4835",
-        "gender": "Male",
-        "type": "Ring",
-        "subtype": "Halo",
-        "collection": "prototype",
-        "description": "",
-        "image": "J011.jpeg"
-    },
-    {
-        "id": "J012",
-        "name": "PrototypeA3148",
-        "gender": "Female",
-        "type": "Ring",
-        "subtype": "Cluster",
-        "collection": "prototype",
-        "description": "",
-        "image": "J012.jpeg"
-    },
-    {
-        "id": "J013",
-        "name": "Prototype64",
-        "gender": "Male",
-        "type": "Ring",
-        "subtype": "Other",
-        "collection": "prototype",
-        "description": "",
-        "image": "J013.jpeg"
-    },
-    {
-        "id": "J014",
-        "name": "Prototype3829",
-        "gender": "Male",
-        "type": "Ring",
-        "subtype": "Other",
-        "collection": "prototype",
-        "description": "",
-        "image": "J014.jpeg"
-    },
-    {
-        "id": "J015",
-        "name": "PrototypeA1614",
-        "gender": "Female",
-        "type": "Ring",
-        "subtype": "Engagement",
-        "collection": "prototype",
-        "description": "",
-        "image": "J015.jpeg"
-    },
-    {
-        "id": "J016",
-        "name": "Prototype4374",
-        "gender": "Male",
-        "type": "Ring",
-        "subtype": "Other",
-        "collection": "prototype",
-        "description": "",
-        "image": "J016.jpeg"
-    },
-    {
-        "id": "J017",
-        "name": "Gold Vanki Ring",
-        "gender": "Female",
-        "type": "Ring",
-        "subtype": "Engagement",
-        "collection": "gold",
-        "description": "",
-        "image": "J017.jpeg"
-    },
-    {
-        "id": "J018",
-        "name": "Gold Infinity Ring",
-        "gender": "Female",
-        "type": "Ring",
-        "subtype": "Other",
-        "collection": "gold",
-        "description": "",
-        "image": "J018.jpeg"
-    },
-    {
-        "id": "J019",
-        "name": "Gold Nova Ring",
-        "gender": "Female",
-        "type": "Ring",
-        "subtype": "",
-        "collection": "gold",
-        "description": "",
-        "image": "J019.jpeg"
-    },
-    {
-        "id": "J020",
-        "name": "Gold Classic Ashoka Ring",
-        "gender": "Male",
-        "type": "Ring",
-        "subtype": "",
-        "collection": "gold",
-        "description": "",
-        "image": "J020.jpeg"
-    },
-    {
-        "id": "J021",
-        "name": "Gold Monarch Ring",
-        "gender": "Male",
-        "type": "Ring",
-        "subtype": "",
-        "collection": "gold",
-        "description": "",
-        "image": "J021.jpeg"
-    },
-    {
-        "id": "J022",
-        "name": "Gold Dynasty Ring",
-        "gender": "Female",
-        "type": "Ring",
-        "subtype": "",
-        "collection": "gold",
-        "description": "",
-        "image": "J022.jpeg"
-    },
-    {
-        "id": "J023",
-        "name": "Gold Sovereign Ashoka Ring",
-        "gender": "Male",
-        "type": "Ring",
-        "subtype": "",
-        "collection": "gold",
-        "description": "",
-        "image": "J023.jpeg"
-    },
-    {
-        "id": "J024",
-        "name": "Gold Petal Ring",
-        "gender": "Female",
-        "type": "Ring",
-        "subtype": "Other",
-        "collection": "gold",
-        "description": "",
-        "image": "J024.jpeg"
-    },
-    {
-        "id": "J025",
-        "name": "Gold HeartsEcho Ring",
-        "gender": "Female",
-        "type": "Ring",
-        "subtype": "",
-        "collection": "gold",
-        "description": "",
-        "image": "J025.jpeg"
-    },
-    {
-        "id": "J026",
-        "name": "Classic Empress Ring",
-        "gender": "Male",
-        "type": "Ring",
-        "subtype": "",
-        "collection": "gold",
-        "description": "",
-        "image": "J026.jpeg"
-    },
-    {
-        "id": "J027",
-        "name": "Classic Gold Legacy Ring",
-        "gender": "Male",
-        "type": "Ring",
-        "subtype": "",
-        "collection": "gold",
-        "description": "",
-        "image": "J027.jpeg"
-    },
-    {
-        "id": "J028",
-        "name": "Classic Gold Ganeshji Ring",
-        "gender": "Male",
-        "type": "Ring",
-        "subtype": "",
-        "collection": "gold",
-        "description": "",
-        "image": "J028.jpeg"
-    },
-    {
-        "id": "J029",
-        "name": "Gold Cherish Petal Ring",
-        "gender": "Female",
-        "type": "Ring",
-        "subtype": "",
-        "collection": "gold",
-        "description": "",
-        "image": "J029.jpeg"
-    },
-    {
-        "id": "J030",
-        "name": "Classic Baroque Anchor Ring",
-        "gender": "Male",
-        "type": "Ring",
-        "subtype": "",
-        "collection": "gold",
-        "description": "",
-        "image": "J030.jpeg"
-    },
-    {
-        "id": "J031",
-        "name": "Gold Aurora Ring",
-        "gender": "Women",
-        "type": "Ring",
-        "subtype": "",
-        "collection": "gold",
-        "description": "",
-        "image": "J031.jpeg",
-        "category": "Ring"
-    },
-    {
-        "id": "GOLD0001",
-        "design_id": "GOLD0001",
-        "name": "Gold Ring",
-        "collection": "gold",
-        "category": "gold",
-        "description": "",
-        "image": "backend/catalogue/gold/61c372a8ae68.jpg",
-        "image_path": "backend/catalogue/gold/61c372a8ae68.jpg",
-        "original_filename": "gold ring.jpg",
-        "segmented_image": "backend/database/segmented_catalogue/gold/61c372a8ae68_segmented.jpg",
-        "gender": "Unisex",
-        "type": "Ring",
-        "subtype": "Engagement"
-    }
+  {
+    "id": "J001",
+    "name": "Prototype8657",
+    "type": "GP",
+    "collection": "Prototype",
+    "description": "",
+    "image": "J001.jpeg"
+  },
+  {
+    "id": "J002",
+    "name": "PrototypeA3274",
+    "type": "Ring",
+    "collection": "Prototype",
+    "description": "",
+    "image": "J002.jpeg"
+  },
+  {
+    "id": "J003",
+    "name": "PrototypeA1662",
+    "type": "FOTO",
+    "collection": "Prototype",
+    "description": "",
+    "image": "J003.jpeg"
+  },
+  {
+    "id": "J004",
+    "name": "PrototypeA551",
+    "type": "Ring",
+    "collection": "Prototype",
+    "description": "",
+    "image": "J004.jpeg"
+  },
+  {
+    "id": "J005",
+    "name": "Prototype4823",
+    "type": "Ring",
+    "collection": "Prototype",
+    "description": "",
+    "image": "J005.jpeg"
+  },
+  {
+    "id": "J006",
+    "name": "PrototypeH-43",
+    "type": "Ring",
+    "collection": "Prototype",
+    "description": "",
+    "image": "J006.jpeg"
+  },
+  {
+    "id": "J007",
+    "name": "Prototype3246",
+    "type": "Ring",
+    "collection": "Prototype",
+    "description": "",
+    "image": "J007.jpeg"
+  },
+  {
+    "id": "J008",
+    "name": "Prototype684",
+    "type": "Ring",
+    "collection": "Prototype",
+    "description": "",
+    "image": "J008.jpeg"
+  },
+  {
+    "id": "J009",
+    "name": "PrototypeA3311",
+    "type": "Ring",
+    "collection": "Prototype",
+    "description": "",
+    "image": "J009.jpeg"
+  },
+  {
+    "id": "J010",
+    "name": "Prototype4711",
+    "type": "Ring",
+    "collection": "Prototype",
+    "description": "",
+    "image": "J010.jpeg"
+  },
+  {
+    "id": "J011",
+    "name": "Prototype4835",
+    "type": "Ring",
+    "collection": "Prototype",
+    "description": "",
+    "image": "J011.jpeg"
+  },
+  {
+    "id": "J012",
+    "name": "PrototypeA3148",
+    "type": "Ring",
+    "collection": "Prototype",
+    "description": "",
+    "image": "J012.jpeg"
+  },
+  {
+    "id": "J013",
+    "name": "Prototype64",
+    "type": "Ring",
+    "collection": "Prototype",
+    "description": "",
+    "image": "J013.jpeg"
+  },
+  {
+    "id": "J014",
+    "name": "Prototype3829",
+    "type": "Ring",
+    "collection": "Prototype",
+    "description": "",
+    "image": "J014.jpeg"
+  },
+  {
+    "id": "J015",
+    "name": "PrototypeA1614",
+    "type": "Ring",
+    "collection": "Prototype",
+    "description": "",
+    "image": "J015.jpeg"
+  },
+  {
+    "id": "J016",
+    "name": "Prototype4374",
+    "type": "Ring",
+    "collection": "Prototype",
+    "description": "",
+    "image": "J016.jpeg"
+  },
+  {
+    "id": "J017",
+    "name": "Gold Vanki Ring",
+    "type": "Ring",
+    "collection": "Gold",
+    "description": "",
+    "image": "J017.jpeg"
+  },
+  {
+    "id": "J018",
+    "name": "Gold Infinity Ring",
+    "type": "Ring",
+    "collection": "Gold",
+    "description": "",
+    "image": "J018.jpeg"
+  },
+  {
+    "id": "J019",
+    "name": "Gold Nova Ring",
+    "type": "Ring",
+    "collection": "Gold",
+    "description": "",
+    "image": "J019.jpeg"
+  },
+  {
+    "id": "J020",
+    "name": "Gold Classic Ashoka Ring",
+    "type": "Ring",
+    "collection": "Gold",
+    "description": "",
+    "image": "J020.jpeg"
+  },
+  {
+    "id": "J021",
+    "name": "Gold Monarch Ring",
+    "type": "Ring",
+    "collection": "Gold",
+    "description": "",
+    "image": "J021.jpeg"
+  },
+  {
+    "id": "J022",
+    "name": "Gold Dynasty Ring",
+    "type": "Ring",
+    "collection": "Gold",
+    "description": "",
+    "image": "J022.jpeg"
+  },
+  {
+    "id": "J023",
+    "name": "Gold Sovereign Ashoka Ring",
+    "type": "Ring",
+    "collection": "Gold",
+    "description": "",
+    "image": "J023.jpeg"
+  },
+  {
+    "id": "J024",
+    "name": "Gold Petal Ring",
+    "type": "Ring",
+    "collection": "Gold",
+    "description": "",
+    "image": "J024.jpeg"
+  },
+  {
+    "id": "J025",
+    "name": "Gold HeartsEcho Ring",
+    "type": "Ring",
+    "collection": "Gold",
+    "description": "",
+    "image": "J025.jpeg"
+  },
+  {
+    "id": "J026",
+    "name": "Classic Empress Ring",
+    "type": "Ring",
+    "collection": "Gold",
+    "description": "",
+    "image": "J026.jpeg"
+  },
+  {
+    "id": "J027",
+    "name": "Classic Gold Legacy Ring",
+    "type": "Ring",
+    "collection": "Gold",
+    "description": "",
+    "image": "J027.jpeg"
+  },
+  {
+    "id": "J028",
+    "name": "Classic Gold Ganeshji Ring",
+    "type": "Ring",
+    "collection": "Gold",
+    "description": "",
+    "image": "J028.jpeg"
+  },
+  {
+    "id": "J029",
+    "name": "Gold Cherish Petal Ring",
+    "type": "Ring",
+    "collection": "Gold",
+    "description": "",
+    "image": "J029.jpeg"
+  },
+  {
+    "id": "J030",
+    "name": "Classic Baroque Anchor Ring",
+    "type": "Ring",
+    "collection": "Gold",
+    "description": "",
+    "image": "J030.jpeg"
+  },
+  {
+    "id": "J031",
+    "name": "Gold Aurora Ring",
+    "type": "Ring",
+    "collection": "Gold",
+    "description": "",
+    "image": "J031.jpeg"
+  },
+  {
+    "id": "GOLD0001",
+    "design_id": "GOLD0001",
+    "name": "Gold Ring",
+    "type": "Ring",
+    "collection": "Gold",
+    "description": "",
+    "image": "backend/catalogue/gold/61c372a8ae68.jpg"
+  },
+  {
+    "id": "J032",
+    "design_id": "J032",
+    "name": "Gold Singleton Ring",
+    "design_name": "Gold Singleton Ring",
+    "collection": "Gold",
+    "type": "CUTTING CHARMS",
+    "description": "",
+    "filename": "J032.png",
+    "image_path": "C:\\Users\\SEJAL LEWIS\\Pictures\\Projects\\JewelleryMatcher_v2\\Jewellery_Matcher\\backend\\catalogue\\gold\\J032.png"
+  }
 ]

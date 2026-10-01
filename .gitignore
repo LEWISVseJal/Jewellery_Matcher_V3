@@ -52,3 +52,10 @@ backend/uploads/
 # Generated indexes
 # Keep dino_index.npz if you want Render to use
 # the prebuilt index.
+
+# React / Node
+frontend/react/node_modules/
+frontend/react/dist/
+frontend/react/.env
+frontend/react/.env.*
+!frontend/react/.env.example

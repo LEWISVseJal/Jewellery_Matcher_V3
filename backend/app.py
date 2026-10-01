@@ -1,114 +1,93 @@
 """
-JewelMatch AI - Flask Backend
+JewelMatch AI
+Flask Backend API
 
-DINOv2-Base / CPU / Visual Search Backend.
-
-Main features:
-    - Jewellery image matching
-    - Search from All
-    - Gold -> Prototype
-    - Prototype -> Gold
+Features:
+    - Jewellery visual matching
+    - Catalogue listing
+    - Catalogue item details
     - Add jewellery
-    - Catalogue management
     - Edit jewellery
     - Delete jewellery
-    - Rebuild visual index
-    - Serve catalogue images
-    - Serve uploaded images
-    - Lightweight jewellery segmentation
+    - Rebuild DINO index
+    - Catalogue image serving
+
+Add Jewellery fields:
+    - name
+    - collection
+    - type
+    - description
+    - image
+
+Removed fields:
+    - gender
+    - subtype
 """
 
 from __future__ import annotations
 
 import json
 import os
-import uuid
+import re
+import subprocess
+import sys
 import traceback
 from pathlib import Path
-from typing import Optional
 
 from flask import (
     Flask,
     jsonify,
-    render_template,
     request,
     send_from_directory,
-    url_for,
 )
-
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 
-# ============================================================
-# SERVICES
-# ============================================================
-
-from .services.matcher import (
-    match_jewellery,
-    load_index,
-    build_index,
-)
-
-from .services.segmentation import (
-    segment_jewellery,
-)
-
-# ============================================================
-# PATH CONFIGURATION
-# ============================================================
-
-BASE_DIR = Path(__file__).resolve().parent
-
-PROJECT_DIR = BASE_DIR.parent
-
-FRONTEND_DIR = PROJECT_DIR / "frontend"
-
-TEMPLATES_DIR = FRONTEND_DIR / "templates"
-
-STATIC_DIR = FRONTEND_DIR / "static"
-
-DATABASE_DIR = BASE_DIR / "database"
-
-CATALOGUE_DIR = BASE_DIR / "catalogue"
-
-UPLOAD_DIR = BASE_DIR / "uploads"
-
-JEWELLERY_JSON = DATABASE_DIR / "jewellery.json"
+from .services.matcher import match_jewellery
 
 
 # ============================================================
-# CATALOGUE COLLECTIONS
+# PATHS
 # ============================================================
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+BACKEND_DIR = BASE_DIR / "backend"
+
+DATABASE_DIR = BACKEND_DIR / "database"
+
+CATALOGUE_DIR = BACKEND_DIR / "catalogue"
 
 GOLD_DIR = CATALOGUE_DIR / "gold"
 
 PROTOTYPE_DIR = CATALOGUE_DIR / "prototype"
 
+JEWELLERY_JSON = DATABASE_DIR / "jewellery.json"
+
+DINO_INDEX = DATABASE_DIR / "dino_index.npz"
+
 
 # ============================================================
-# FLASK APP
+# APP
 # ============================================================
 
-app = Flask(
-    __name__,
-    template_folder=str(TEMPLATES_DIR),
-    static_folder=str(STATIC_DIR),
+app = Flask(__name__)
+
+CORS(
+    app,
+    resources={
+        r"/api/*": {
+            "origins": "*"
+        },
+        r"/catalogue-image/*": {
+            "origins": "*"
+        },
+    },
 )
 
-CORS(app)
-
 
 # ============================================================
-# FLASK CONFIGURATION
-# ============================================================
-
-app.config["MAX_CONTENT_LENGTH"] = 20 * 1024 * 1024
-
-app.config["JSON_SORT_KEYS"] = False
-
-
-# ============================================================
-# ALLOWED FILES
+# CONFIGURATION
 # ============================================================
 
 ALLOWED_EXTENSIONS = {
@@ -119,27 +98,116 @@ ALLOWED_EXTENSIONS = {
     "bmp",
 }
 
+MAX_UPLOAD_SIZE = 10 * 1024 * 1024
 
-# ============================================================
-# CREATE REQUIRED DIRECTORIES
-# ============================================================
-
-for directory in [
-    DATABASE_DIR,
-    CATALOGUE_DIR,
-    GOLD_DIR,
-    PROTOTYPE_DIR,
-    UPLOAD_DIR,
-]:
-    directory.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
+app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_SIZE
 
 
 # ============================================================
-# JSON HELPERS
+# JEWELLERY TYPES
 # ============================================================
+
+JEWELLERY_TYPES = [
+    "LP",
+    "GP",
+    "LAD",
+    "GAD",
+    "SSL",
+    "SSG",
+    "WB",
+    "EMROLD",
+    "KACHUWA TORTOISE",
+    "CHALA MIX",
+    "OMP",
+    "GF",
+    "FOTO",
+    "LBR",
+    "GBR",
+    "PENDELS",
+    "HIGHPOLISHCHARMS",
+    "CUTTING CHARMS",
+    "LCH",
+    "SIMBA",
+    "LETTERS",
+    "OMRING",
+    "RAJMUDRA",
+    "OTHERS EXTRA",
+    "GCH",
+]
+
+
+VALID_COLLECTIONS = {
+    "gold": "Gold",
+    "prototype": "Prototype",
+}
+
+
+# ============================================================
+# DIRECTORY SETUP
+# ============================================================
+
+DATABASE_DIR.mkdir(
+    parents=True,
+    exist_ok=True,
+)
+
+GOLD_DIR.mkdir(
+    parents=True,
+    exist_ok=True,
+)
+
+PROTOTYPE_DIR.mkdir(
+    parents=True,
+    exist_ok=True,
+)
+
+
+# ============================================================
+# HELPERS
+# ============================================================
+
+def allowed_file(filename: str) -> bool:
+    """
+    Check whether uploaded file has an allowed image extension.
+    """
+
+    if not filename:
+        return False
+
+    extension = Path(filename).suffix.lower().lstrip(".")
+
+    return extension in ALLOWED_EXTENSIONS
+
+
+def normalize_collection(value: str | None) -> str | None:
+    """
+    Convert collection value into canonical form.
+    """
+
+    if not value:
+        return None
+
+    value = value.strip().lower()
+
+    return VALID_COLLECTIONS.get(value)
+
+
+def normalize_type(value: str | None) -> str | None:
+    """
+    Match jewellery type against the allowed type list.
+    """
+
+    if not value:
+        return None
+
+    value = value.strip()
+
+    for jewellery_type in JEWELLERY_TYPES:
+
+        if jewellery_type.lower() == value.lower():
+            return jewellery_type
+
+    return None
 
 
 def load_catalogue() -> list:
@@ -151,6 +219,7 @@ def load_catalogue() -> list:
         return []
 
     try:
+
         with open(
             JEWELLERY_JSON,
             "r",
@@ -159,42 +228,32 @@ def load_catalogue() -> list:
 
             data = json.load(file)
 
+        if isinstance(data, list):
+            return data
+
+        if isinstance(data, dict):
+
+            if isinstance(data.get("items"), list):
+                return data["items"]
+
+            if isinstance(data.get("jewellery"), list):
+                return data["jewellery"]
+
+        return []
+
     except Exception as exc:
 
         print(
-            "[CATALOGUE] Failed to load JSON:",
+            "[CATALOGUE] Failed to load jewellery.json:",
             exc,
         )
 
         return []
 
-    if isinstance(data, list):
-        return data
 
-    if isinstance(data, dict):
-
-        for key in [
-            "jewellery",
-            "items",
-            "catalogue",
-            "data",
-        ]:
-
-            if isinstance(
-                data.get(key),
-                list,
-            ):
-
-                return data[key]
-
-    return []
-
-
-def save_catalogue(
-    catalogue: list,
-) -> None:
+def save_catalogue(items: list) -> None:
     """
-    Save catalogue JSON safely.
+    Save jewellery catalogue JSON atomically.
     """
 
     DATABASE_DIR.mkdir(
@@ -202,7 +261,9 @@ def save_catalogue(
         exist_ok=True,
     )
 
-    temporary_file = JEWELLERY_JSON.with_suffix(".tmp")
+    temporary_file = JEWELLERY_JSON.with_suffix(
+        ".tmp.json"
+    )
 
     with open(
         temporary_file,
@@ -211,518 +272,226 @@ def save_catalogue(
     ) as file:
 
         json.dump(
-            catalogue,
+            items,
             file,
-            indent=4,
+            indent=2,
             ensure_ascii=False,
         )
 
-    temporary_file.replace(JEWELLERY_JSON)
+    temporary_file.replace(
+        JEWELLERY_JSON
+    )
 
 
-# ============================================================
-# FILE HELPERS
-# ============================================================
-
-
-def allowed_file(
-    filename: str,
-) -> bool:
+def generate_next_design_id(items: list) -> str:
     """
-    Check supported image extension.
+    Generate next J001-style design ID.
     """
 
-    if not filename:
-        return False
+    highest_number = 0
 
-    if "." not in filename:
-        return False
+    for item in items:
 
-    extension = filename.rsplit(
-        ".",
-        1,
-    )[1].lower()
+        design_id = str(
+            item.get(
+                "design_id",
+                item.get(
+                    "id",
+                    "",
+                ),
+            )
+        )
 
-    return extension in ALLOWED_EXTENSIONS
+        match = re.search(
+            r"J(\d+)",
+            design_id.upper(),
+        )
 
+        if match:
 
-# ============================================================
-# COLLECTION HELPERS
-# ============================================================
+            number = int(
+                match.group(1)
+            )
 
+            highest_number = max(
+                highest_number,
+                number,
+            )
 
-def normalize_collection(
-    value: Optional[str],
-) -> Optional[str]:
-    """
-    Normalize collection name.
-
-    Supported aliases:
-
-        gold
-        gold_img
-        finished
-
-        prototype
-        prototype_img
-        green
-    """
-
-    if value is None:
-        return None
-
-    value = str(value).strip().lower()
-
-    if value in [
-        "gold",
-        "gold_img",
-        "finished",
-    ]:
-
-        return "gold"
-
-    if value in [
-        "prototype",
-        "prototype_img",
-        "green",
-    ]:
-
-        return "prototype"
-
-    return None
+    return f"J{highest_number + 1:03d}"
 
 
-def get_collection_folder(
+def get_collection_directory(
     collection: str,
-) -> Optional[Path]:
+) -> Path:
     """
-    Return folder for collection.
+    Return catalogue directory for collection.
     """
 
-    collection = normalize_collection(collection)
+    normalized = normalize_collection(
+        collection
+    )
 
-    if collection == "gold":
+    if normalized == "Gold":
         return GOLD_DIR
 
-    if collection == "prototype":
+    if normalized == "Prototype":
         return PROTOTYPE_DIR
 
-    return None
-
-
-# ============================================================
-# SEARCH MODE
-# ============================================================
-
-
-def normalize_search_mode(
-    value: Optional[str],
-) -> str:
-    """
-    Normalize visual search mode.
-
-    Supported modes:
-
-        all
-        gold_to_prototype
-        prototype_to_gold
-    """
-
-    if value is None:
-        return "all"
-
-    value = str(value).strip().lower()
-
-    aliases = {
-        "all": "all",
-        "both": "all",
-        "search_all": "all",
-        "all_collections": "all",
-        "gold_to_prototype": "gold_to_prototype",
-        "gold-to-prototype": "gold_to_prototype",
-        "gold2prototype": "gold_to_prototype",
-        "gold_to_proto": "gold_to_prototype",
-        "prototype_to_gold": "prototype_to_gold",
-        "prototype-to-gold": "prototype_to_gold",
-        "prototype2gold": "prototype_to_gold",
-        "proto_to_gold": "prototype_to_gold",
-    }
-
-    return aliases.get(
-        value,
-        "all",
+    raise ValueError(
+        "Invalid collection."
     )
 
 
-def get_search_mode_label(
-    search_mode: str,
-) -> str:
-    """
-    Human-readable search mode.
-    """
-
-    search_mode = normalize_search_mode(search_mode)
-
-    if search_mode == "gold_to_prototype":
-        return "Gold → Prototype"
-
-    if search_mode == "prototype_to_gold":
-        return "Prototype → Gold"
-
-    return "Search from All"
-
-
-# ============================================================
-# FILE NAME
-# ============================================================
-
-
-def generate_unique_filename(
-    original_filename: str,
-) -> str:
-    """
-    Generate safe unique image filename.
-    """
-
-    original_filename = secure_filename(original_filename)
-
-    extension = ""
-
-    if "." in original_filename:
-
-        extension = (
-            "."
-            + original_filename.rsplit(
-                ".",
-                1,
-            )[1].lower()
-        )
-
-    unique_id = uuid.uuid4().hex[:12]
-
-    return f"{unique_id}{extension}"
-
-
-# ============================================================
-# ID HELPERS
-# ============================================================
-
-
-def generate_design_id(
+def build_image_url(
     collection: str,
-    catalogue: list,
+    filename: str,
 ) -> str:
     """
-    Generate a unique jewellery ID.
+    Build frontend image URL.
     """
 
-    prefix = "GOLD" if collection == "gold" else "PROTOTYPE"
+    collection_value = collection.lower()
 
-    existing_ids = {str(item.get("id", "")) for item in catalogue}
-
-    number = 1
-
-    while True:
-
-        design_id = f"{prefix}{number:04d}"
-
-        if design_id not in existing_ids:
-            return design_id
-
-        number += 1
-
-
-# ============================================================
-# FIND ITEM
-# ============================================================
-
-
-def find_catalogue_item(
-    item_id: str,
-    catalogue: list,
-):
-    """
-    Find catalogue item by id or design_id.
-    """
-
-    item_id = str(item_id)
-
-    for index, item in enumerate(catalogue):
-
-        if str(item.get("id", "")) == item_id:
-
-            return index, item
-
-        if str(item.get("design_id", "")) == item_id:
-
-            return index, item
-
-    return None, None
-
-
-# ============================================================
-# IMAGE PATH FROM ITEM
-# ============================================================
-
-
-def get_item_image_path(
-    item: dict,
-) -> Optional[Path]:
-    """
-    Resolve stored image path.
-    """
-
-    possible_keys = [
-        "image_path",
-        "image",
-        "path",
-        "file_path",
-        "filename",
-        "file",
-    ]
-
-    raw_path = None
-
-    for key in possible_keys:
-
-        if item.get(key):
-
-            raw_path = str(item[key])
-
-            break
-
-    if not raw_path:
-        return None
-
-    raw_path = raw_path.replace(
-        "\\",
-        "/",
+    return (
+        f"/catalogue-image/"
+        f"{collection_value}/"
+        f"{filename}"
     )
 
-    candidate_paths = []
 
-    path = Path(raw_path)
-
-    if path.is_absolute():
-
-        candidate_paths.append(path)
-
-    candidate_paths.extend(
-        [
-            PROJECT_DIR / raw_path,
-            BASE_DIR / raw_path,
-            CATALOGUE_DIR / raw_path,
-            PROJECT_DIR / "backend" / raw_path,
-        ]
-    )
-
-    checked = set()
-
-    for candidate in candidate_paths:
-
-        try:
-
-            candidate = candidate.resolve()
-
-        except Exception:
-
-            continue
-
-        candidate_string = str(candidate)
-
-        if candidate_string in checked:
-            continue
-
-        checked.add(candidate_string)
-
-        if candidate.exists():
-            return candidate
-
-    filename = Path(raw_path).name
-
-    if filename:
-
-        for folder in [
-            GOLD_DIR,
-            PROTOTYPE_DIR,
-        ]:
-
-            if folder.exists():
-
-                matches = list(folder.rglob(filename))
-
-                if matches:
-                    return matches[0]
-
-    return None
-
-
-# ============================================================
-# IMAGE URL
-# ============================================================
-
-
-def image_url_for_item(
-    item: dict,
-) -> Optional[str]:
-    """
-    Convert local catalogue image path
-    into browser-accessible URL.
-    """
-
-    image_path = get_item_image_path(item)
-
-    if image_path is None:
-        return None
-
-    try:
-
-        relative = image_path.relative_to(CATALOGUE_DIR)
-
-        parts = relative.parts
-
-        if len(parts) < 2:
-            return None
-
-        collection = parts[0]
-
-        filename = "/".join(parts[1:])
-
-        return url_for(
-            "catalogue_image",
-            collection=collection,
-            filename=filename,
-        )
-
-    except ValueError:
-
-        return None
-
-
-# ============================================================
-# NORMALIZE ITEM FOR API
-# ============================================================
-
-
-def serialize_catalogue_item(
+def enrich_catalogue_item(
     item: dict,
 ) -> dict:
     """
-    Return catalogue item safe for frontend.
+    Add image_url/image fields without changing
+    the stored catalogue object.
     """
 
     result = dict(item)
 
-    image_url = image_url_for_item(item)
+    collection = result.get(
+        "collection",
+        "",
+    )
 
-    if image_url:
+    image_path = result.get(
+        "image_path",
+        result.get(
+            "image",
+            "",
+        ),
+    )
+
+    filename = result.get(
+        "filename",
+        "",
+    )
+
+    if image_path:
+
+        path = Path(
+            str(image_path)
+        )
+
+        filename = path.name
+
+    if collection and filename:
+
+        image_url = build_image_url(
+            collection,
+            filename,
+        )
 
         result["image_url"] = image_url
-
         result["image"] = image_url
 
     return result
 
 
-# ============================================================
-# HOME
-# ============================================================
+def rebuild_dino_index() -> dict:
+    """
+    Rebuild the DINO index.
 
+    Uses the existing project index-building script,
+    so the current matcher/index architecture remains intact.
+    """
 
-@app.route(
-    "/",
-    methods=["GET"],
-)
-def home():
-
-    return render_template("index.html")
-
-
-# ============================================================
-# ADD JEWELLERY PAGE
-# ============================================================
-
-
-@app.route(
-    "/add-jewellery",
-    methods=["GET"],
-)
-def add_jewellery_page():
-
-    return render_template("add_jewellery.html")
-
-
-# ============================================================
-# CATALOGUE PAGE
-# ============================================================
-
-
-@app.route(
-    "/catalogue",
-    methods=["GET"],
-)
-def catalogue_page():
-
-    return render_template("catalogue.html")
-
-
-# ============================================================
-# SERVE CATALOGUE IMAGE
-# ============================================================
-
-
-@app.route(
-    "/catalogue-image/<collection>/<path:filename>",
-    methods=["GET"],
-)
-def catalogue_image(
-    collection,
-    filename,
-):
-
-    collection = normalize_collection(collection)
-
-    if collection is None:
-
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": "Invalid collection.",
-                }
-            ),
-            400,
-        )
-
-    folder = get_collection_folder(collection)
-
-    if folder is None:
-
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": "Invalid collection.",
-                }
-            ),
-            400,
-        )
-
-    return send_from_directory(
-        str(folder),
-        filename,
+    print(
+        "[INDEX] Rebuilding DINO index..."
     )
 
+    try:
+
+        from .scripts.create_dino_index import (
+            build_index,
+        )
+
+        result = build_index(
+            force=True
+        )
+
+        print(
+            "[INDEX] DINO index rebuilt successfully."
+        )
+
+        return {
+            "success": True,
+            "result": result,
+        }
+
+    except Exception as exc:
+
+        print(
+            "[INDEX] Direct rebuild failed:",
+            exc,
+        )
+
+        traceback.print_exc()
+
+        return {
+            "success": False,
+            "message": str(exc),
+        }
+
+
+def remove_old_image(
+    item: dict,
+) -> None:
+    """
+    Remove old catalogue image when required.
+    """
+
+    image_path = item.get(
+        "image_path"
+    )
+
+    if not image_path:
+        return
+
+    path = Path(
+        image_path
+    )
+
+    if path.exists():
+
+        try:
+
+            path.unlink()
+
+        except Exception as exc:
+
+            print(
+                "[IMAGE] Could not remove old image:",
+                exc,
+            )
+
 
 # ============================================================
-# HEALTH CHECK
+# HEALTH
 # ============================================================
 
-
-@app.route(
-    "/api/health",
-    methods=["GET"],
-)
+@app.get("/api/health")
 def health():
 
     return jsonify(
@@ -730,1390 +499,1122 @@ def health():
             "success": True,
             "status": "healthy",
             "service": "JewelMatch AI",
-            "model": "DINOv2-Base",
-            "embedding_size": 768,
         }
     )
 
 
 # ============================================================
-# GET CATALOGUE
+# JEWELLERY TYPES API
 # ============================================================
 
-
-def catalogue_response():
-
-    catalogue = load_catalogue()
-
-    collection_filter = request.args.get("collection")
-
-    search = (
-        request.args.get(
-            "search",
-            "",
-        )
-        .strip()
-        .lower()
-    )
-
-    normalized_filter = (
-        normalize_collection(collection_filter) if collection_filter else None
-    )
-
-    results = []
-
-    for item in catalogue:
-
-        item_collection = normalize_collection(
-            item.get(
-                "collection",
-                item.get("category"),
-            )
-        )
-
-        if normalized_filter and item_collection != normalized_filter:
-            continue
-
-        if search:
-
-            searchable = " ".join(
-                [
-                    str(
-                        item.get(
-                            "id",
-                            "",
-                        )
-                    ),
-                    str(
-                        item.get(
-                            "design_id",
-                            "",
-                        )
-                    ),
-                    str(
-                        item.get(
-                            "name",
-                            "",
-                        )
-                    ),
-                    str(
-                        item.get(
-                            "design_name",
-                            "",
-                        )
-                    ),
-                    str(
-                        item.get(
-                            "description",
-                            "",
-                        )
-                    ),
-                    str(
-                        item.get(
-                            "collection",
-                            "",
-                        )
-                    ),
-                ]
-            ).lower()
-
-            if search not in searchable:
-                continue
-
-        results.append(serialize_catalogue_item(item))
-
-    gold_count = sum(
-        1
-        for item in catalogue
-        if normalize_collection(
-            item.get(
-                "collection",
-                item.get("category"),
-            )
-        )
-        == "gold"
-    )
-
-    prototype_count = sum(
-        1
-        for item in catalogue
-        if normalize_collection(
-            item.get(
-                "collection",
-                item.get("category"),
-            )
-        )
-        == "prototype"
-    )
+@app.get("/api/jewellery-types")
+def get_jewellery_types():
 
     return jsonify(
         {
             "success": True,
-            "items": results,
-            "results": results,
-            "total": len(results),
-            "total_count": len(catalogue),
-            "gold_count": gold_count,
-            "prototype_count": prototype_count,
+            "types": JEWELLERY_TYPES,
         }
     )
-
-
-@app.route(
-    "/api/catalogue",
-    methods=["GET"],
-)
-def get_catalogue():
-
-    return catalogue_response()
-
-
-# ============================================================
-# CATALOGUE API COMPATIBILITY ALIAS
-# ============================================================
-
-
-@app.route(
-    "/api/jewellery",
-    methods=["GET"],
-)
-def get_jewellery_alias():
-
-    return catalogue_response()
-
-
-# ============================================================
-# GET SINGLE CATALOGUE ITEM
-# ============================================================
-
-
-@app.route(
-    "/api/catalogue/<item_id>",
-    methods=["GET"],
-)
-def get_catalogue_item(item_id):
-
-    catalogue = load_catalogue()
-
-    index, item = find_catalogue_item(
-        item_id,
-        catalogue,
-    )
-
-    if item is None:
-
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": "Jewellery item not found.",
-                }
-            ),
-            404,
-        )
-
-    return jsonify(
-        {
-            "success": True,
-            "item": serialize_catalogue_item(item),
-        }
-    )
-
-
-# ============================================================
-# ADD JEWELLERY
-# ============================================================
-
-
-@app.route(
-    "/api/jewellery/add",
-    methods=["POST"],
-)
-def add_jewellery():
-
-    try:
-
-        collection = request.form.get("collection") or request.form.get("category")
-
-        collection = normalize_collection(collection)
-
-        if collection is None:
-
-            return (
-                jsonify(
-                    {
-                        "success": False,
-                        "message": ("Collection must be " "Gold or Prototype."),
-                    }
-                ),
-                400,
-            )
-
-        image_file = request.files.get("image") or request.files.get("file")
-
-        if image_file is None:
-
-            return (
-                jsonify(
-                    {
-                        "success": False,
-                        "message": "Please upload an image.",
-                    }
-                ),
-                400,
-            )
-
-        if not image_file.filename:
-
-            return (
-                jsonify(
-                    {
-                        "success": False,
-                        "message": "Image filename is empty.",
-                    }
-                ),
-                400,
-            )
-
-        if not allowed_file(image_file.filename):
-
-            return (
-                jsonify(
-                    {
-                        "success": False,
-                        "message": (
-                            "Unsupported image format. "
-                            "Use JPG, JPEG, PNG, "
-                            "WEBP or BMP."
-                        ),
-                    }
-                ),
-                400,
-            )
-
-        catalogue = load_catalogue()
-
-        item_id = request.form.get("id") or request.form.get("design_id")
-
-        if not item_id:
-
-            item_id = generate_design_id(
-                collection,
-                catalogue,
-            )
-
-        item_id = str(item_id).strip()
-
-        existing_index, existing_item = find_catalogue_item(
-            item_id,
-            catalogue,
-        )
-
-        if existing_item is not None:
-
-            return (
-                jsonify(
-                    {
-                        "success": False,
-                        "message": (f"Jewellery ID " f"'{item_id}' already exists."),
-                    }
-                ),
-                409,
-            )
-
-        original_filename = image_file.filename
-
-        safe_filename = generate_unique_filename(original_filename)
-
-        collection_folder = get_collection_folder(collection)
-
-        if collection_folder is None:
-
-            return (
-                jsonify(
-                    {
-                        "success": False,
-                        "message": "Invalid collection.",
-                    }
-                ),
-                400,
-            )
-
-        collection_folder.mkdir(
-            parents=True,
-            exist_ok=True,
-        )
-
-        image_path = collection_folder / safe_filename
-
-        image_file.save(str(image_path))
-
-        segmented_folder = DATABASE_DIR / "segmented_catalogue" / collection
-
-        segmented_folder.mkdir(
-            parents=True,
-            exist_ok=True,
-        )
-
-        segmented_filename = Path(safe_filename).stem + "_segmented.jpg"
-
-        segmented_path = segmented_folder / segmented_filename
-
-        try:
-
-            segment_jewellery(
-                image_path,
-                segmented_path,
-            )
-
-        except Exception as exc:
-
-            print(
-                "[ADD] Lightweight segmentation failed:",
-                exc,
-            )
-
-            segmented_path = None
-
-        relative_image_path = str(image_path.relative_to(PROJECT_DIR)).replace(
-            "\\",
-            "/",
-        )
-
-        item = {
-            "id": item_id,
-            "design_id": (request.form.get("design_id") or item_id),
-            "name": (
-                request.form.get("name") or request.form.get("design_name") or item_id
-            ),
-            "collection": collection,
-            "category": collection,
-            "description": (request.form.get("description") or ""),
-            "image": relative_image_path,
-            "image_path": relative_image_path,
-            "original_filename": original_filename,
-        }
-
-        if segmented_path is not None:
-
-            item["segmented_image"] = str(
-                segmented_path.relative_to(PROJECT_DIR)
-            ).replace(
-                "\\",
-                "/",
-            )
-
-        reserved_fields = {
-            "collection",
-            "category",
-            "id",
-            "design_id",
-            "name",
-            "design_name",
-            "description",
-        }
-
-        for key in request.form:
-
-            if key in reserved_fields:
-                continue
-
-            value = request.form.get(key)
-
-            if value is not None:
-                item[key] = value
-
-        catalogue.append(item)
-
-        save_catalogue(catalogue)
-
-        try:
-
-            build_index(force=True)
-
-        except Exception as exc:
-
-            print(
-                "[ADD] DINOv2-Base index rebuild failed:",
-                exc,
-            )
-
-            return (
-                jsonify(
-                    {
-                        "success": True,
-                        "message": (
-                            "Jewellery added, but " "visual index rebuild failed."
-                        ),
-                        "warning": str(exc),
-                        "item": serialize_catalogue_item(item),
-                    }
-                ),
-                201,
-            )
-
-        return (
-            jsonify(
-                {
-                    "success": True,
-                    "message": ("Jewellery added successfully."),
-                    "item": serialize_catalogue_item(item),
-                }
-            ),
-            201,
-        )
-
-    except Exception as exc:
-
-        print(
-            "[ADD] ERROR:",
-            exc,
-        )
-
-        traceback.print_exc()
-
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": str(exc),
-                }
-            ),
-            500,
-        )
-
-
-# ============================================================
-# EDIT JEWELLERY
-# ============================================================
-
-
-@app.route(
-    "/api/jewellery/<item_id>",
-    methods=["PUT", "POST"],
-)
-def update_jewellery(item_id):
-
-    try:
-
-        catalogue = load_catalogue()
-
-        index, item = find_catalogue_item(
-            item_id,
-            catalogue,
-        )
-
-        if item is None:
-
-            return (
-                jsonify(
-                    {
-                        "success": False,
-                        "message": ("Jewellery item not found."),
-                    }
-                ),
-                404,
-            )
-
-        if request.is_json:
-
-            data = request.get_json(silent=True) or {}
-
-        else:
-
-            data = request.form.to_dict()
-
-        old_collection = normalize_collection(item.get("collection"))
-
-        new_collection = normalize_collection(
-            data.get(
-                "collection",
-                old_collection,
-            )
-        )
-
-        if new_collection is None:
-            new_collection = old_collection
-
-        editable_fields = [
-            "name",
-            "design_name",
-            "description",
-            "design_id",
-        ]
-
-        for field in editable_fields:
-
-            if field in data:
-
-                value = data.get(field)
-
-                if value is not None:
-
-                    item[field] = str(value)
-
-        item["collection"] = new_collection
-
-        item["category"] = new_collection
-
-        image_file = request.files.get("image") or request.files.get("file")
-
-        if image_file is not None:
-
-            if not image_file.filename:
-
-                return (
-                    jsonify(
-                        {
-                            "success": False,
-                            "message": ("Image filename is empty."),
-                        }
-                    ),
-                    400,
-                )
-
-            if not allowed_file(image_file.filename):
-
-                return (
-                    jsonify(
-                        {
-                            "success": False,
-                            "message": ("Unsupported image format."),
-                        }
-                    ),
-                    400,
-                )
-
-            old_image_path = get_item_image_path(item)
-
-            if old_image_path and old_image_path.exists():
-
-                try:
-
-                    old_image_path.unlink()
-
-                except Exception as exc:
-
-                    print(
-                        "[UPDATE] Could not delete old image:",
-                        exc,
-                    )
-
-            collection_folder = get_collection_folder(new_collection)
-
-            if collection_folder is None:
-
-                return (
-                    jsonify(
-                        {
-                            "success": False,
-                            "message": ("Invalid collection."),
-                        }
-                    ),
-                    400,
-                )
-
-            collection_folder.mkdir(
-                parents=True,
-                exist_ok=True,
-            )
-
-            new_filename = generate_unique_filename(image_file.filename)
-
-            new_image_path = collection_folder / new_filename
-
-            image_file.save(str(new_image_path))
-
-            relative_path = str(new_image_path.relative_to(PROJECT_DIR)).replace(
-                "\\",
-                "/",
-            )
-
-            item["image"] = relative_path
-
-            item["image_path"] = relative_path
-
-            item["original_filename"] = image_file.filename
-
-            segmented_folder = DATABASE_DIR / "segmented_catalogue" / new_collection
-
-            segmented_folder.mkdir(
-                parents=True,
-                exist_ok=True,
-            )
-
-            segmented_path = segmented_folder / (
-                Path(new_filename).stem + "_segmented.jpg"
-            )
-
-            try:
-
-                segment_jewellery(
-                    new_image_path,
-                    segmented_path,
-                )
-
-                item["segmented_image"] = str(
-                    segmented_path.relative_to(PROJECT_DIR)
-                ).replace(
-                    "\\",
-                    "/",
-                )
-
-            except Exception as exc:
-
-                print(
-                    "[UPDATE] Segmentation failed:",
-                    exc,
-                )
-
-        catalogue[index] = item
-
-        save_catalogue(catalogue)
-
-        try:
-
-            build_index(force=True)
-
-        except Exception as exc:
-
-            print(
-                "[UPDATE] DINOv2-Base index rebuild failed:",
-                exc,
-            )
-
-            return (
-                jsonify(
-                    {
-                        "success": True,
-                        "message": (
-                            "Jewellery updated, but " "visual index rebuild failed."
-                        ),
-                        "warning": str(exc),
-                        "item": serialize_catalogue_item(item),
-                    }
-                ),
-                200,
-            )
-
-        return jsonify(
-            {
-                "success": True,
-                "message": ("Jewellery updated successfully."),
-                "item": serialize_catalogue_item(item),
-            }
-        )
-
-    except Exception as exc:
-
-        print(
-            "[UPDATE] ERROR:",
-            exc,
-        )
-
-        traceback.print_exc()
-
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": str(exc),
-                }
-            ),
-            500,
-        )
-
-
-# ============================================================
-# DELETE JEWELLERY
-# ============================================================
-
-
-@app.route(
-    "/api/jewellery/<item_id>",
-    methods=["DELETE"],
-)
-def delete_jewellery(item_id):
-
-    try:
-
-        catalogue = load_catalogue()
-
-        index, item = find_catalogue_item(
-            item_id,
-            catalogue,
-        )
-
-        if item is None:
-
-            return (
-                jsonify(
-                    {
-                        "success": False,
-                        "message": ("Jewellery item not found."),
-                    }
-                ),
-                404,
-            )
-
-        image_path = get_item_image_path(item)
-
-        if image_path and image_path.exists():
-
-            try:
-
-                image_path.unlink()
-
-            except Exception as exc:
-
-                print(
-                    "[DELETE] Could not delete image:",
-                    exc,
-                )
-
-        segmented_raw = item.get("segmented_image")
-
-        if segmented_raw:
-
-            segmented_path = PROJECT_DIR / str(segmented_raw).replace(
-                "\\",
-                "/",
-            )
-
-            if segmented_path.exists():
-
-                try:
-
-                    segmented_path.unlink()
-
-                except Exception as exc:
-
-                    print(
-                        "[DELETE] Could not delete segmented image:",
-                        exc,
-                    )
-
-        deleted_item = catalogue.pop(index)
-
-        save_catalogue(catalogue)
-
-        try:
-
-            build_index(force=True)
-
-        except Exception as exc:
-
-            print(
-                "[DELETE] DINOv2-Base index rebuild failed:",
-                exc,
-            )
-
-            return jsonify(
-                {
-                    "success": True,
-                    "message": (
-                        "Jewellery deleted, but " "visual index rebuild failed."
-                    ),
-                    "warning": str(exc),
-                    "item": deleted_item,
-                }
-            )
-
-        return jsonify(
-            {
-                "success": True,
-                "message": ("Jewellery deleted successfully."),
-                "item": deleted_item,
-            }
-        )
-
-    except Exception as exc:
-
-        print(
-            "[DELETE] ERROR:",
-            exc,
-        )
-
-        traceback.print_exc()
-
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": str(exc),
-                }
-            ),
-            500,
-        )
 
 
 # ============================================================
 # MATCH API
 # ============================================================
 
-
-@app.route(
-    "/api/match",
-    methods=["POST"],
-)
-def match():
-
-    query_path = None
+@app.post("/api/match")
+def match_api():
 
     try:
 
-        image_file = (
-            request.files.get("image")
-            or request.files.get("file")
-            or request.files.get("query_image")
+        uploaded_file = request.files.get(
+            "image"
         )
 
-        if image_file is None:
+        if uploaded_file is None:
 
-            return (
-                jsonify(
-                    {
-                        "success": False,
-                        "matched": False,
-                        "message": ("Please upload a " "jewellery image."),
-                        "results": [],
-                    }
-                ),
-                400,
-            )
+            return jsonify(
+                {
+                    "success": False,
+                    "message": "No image was uploaded.",
+                }
+            ), 400
 
-        if not image_file.filename:
+        if not uploaded_file.filename:
 
-            return (
-                jsonify(
-                    {
-                        "success": False,
-                        "matched": False,
-                        "message": ("Uploaded image has " "no filename."),
-                        "results": [],
-                    }
-                ),
-                400,
-            )
+            return jsonify(
+                {
+                    "success": False,
+                    "message": "Uploaded image has no filename.",
+                }
+            ), 400
 
-        if not allowed_file(image_file.filename):
+        if not allowed_file(
+            uploaded_file.filename
+        ):
 
-            return (
-                jsonify(
-                    {
-                        "success": False,
-                        "matched": False,
-                        "message": (
-                            "Unsupported image format. "
-                            "Use JPG, JPEG, PNG, "
-                            "WEBP or BMP."
-                        ),
-                        "results": [],
-                    }
-                ),
-                400,
-            )
+            return jsonify(
+                {
+                    "success": False,
+                    "message": "Unsupported image format.",
+                }
+            ), 400
 
-        safe_original_name = secure_filename(image_file.filename)
-
-        query_filename = f"query_" f"{uuid.uuid4().hex[:12]}_" f"{safe_original_name}"
-
-        query_path = UPLOAD_DIR / query_filename
-
-        image_file.save(str(query_path))
-
-        top_k_raw = request.form.get(
-            "top_k",
-            "8",
+        search_mode = request.form.get(
+            "search_mode",
+            "all",
         )
+
+        if search_mode not in {
+            "all",
+            "gold_to_prototype",
+            "prototype_to_gold",
+        }:
+
+            search_mode = "all"
 
         try:
 
-            top_k = int(top_k_raw)
+            top_k = int(
+                request.form.get(
+                    "top_k",
+                    8,
+                )
+            )
 
-        except Exception:
+        except ValueError:
 
             top_k = 8
 
         top_k = max(
             1,
-            min(top_k, 20),
+            min(
+                top_k,
+                20,
+            ),
         )
 
-        search_mode = normalize_search_mode(
-            request.form.get(
-                "search_mode",
-                "all",
-            )
+        upload_dir = DATABASE_DIR / "uploads"
+
+        upload_dir.mkdir(
+            parents=True,
+            exist_ok=True,
         )
 
-        search_mode_label = get_search_mode_label(search_mode)
-
-        print("\n[MATCH API]" f" Search mode: {search_mode}" f" ({search_mode_label})")
-
-        result = match_jewellery(
-            query_path,
-            top_k=top_k,
-            search_mode=search_mode,
+        filename = secure_filename(
+            uploaded_file.filename
         )
 
-        if not isinstance(
-            result,
-            dict,
-        ):
+        temporary_path = (
+            upload_dir /
+            filename
+        )
 
-            result = {
-                "success": False,
-                "matched": False,
-                "message": ("Matcher returned " "an invalid response."),
-                "results": [],
-            }
-
-        if "results" not in result:
-            result["results"] = []
-
-        if "success" not in result:
-            result["success"] = True
-
-        if "matched" not in result:
-
-            result["matched"] = bool(result.get("results"))
-
-        best_similarity = result.get("best_similarity")
-
-        if best_similarity is None:
-
-            best_similarity = result.get("similarity")
-
-        if best_similarity is None:
-
-            best_similarity = result.get(
-                "score",
-                0.0,
-            )
+        uploaded_file.save(
+            temporary_path
+        )
 
         try:
 
-            best_similarity = float(best_similarity or 0.0)
+            result = match_jewellery(
+                temporary_path,
+                top_k=top_k,
+                search_mode=search_mode,
+            )
 
-        except Exception:
+        finally:
 
-            best_similarity = 0.0
+            if temporary_path.exists():
 
-        result["best_similarity"] = best_similarity
+                try:
+                    temporary_path.unlink()
+                except Exception:
+                    pass
 
-        if "similarity" not in result:
-
-            result["similarity"] = best_similarity
-
-        if "score" not in result:
-
-            result["score"] = best_similarity
-
-        result["search_mode"] = search_mode
-
-        result["search_mode_label"] = search_mode_label
-
-        result["query_filename"] = query_filename
-
-        if "source_collection" not in result:
-
-            result["source_collection"] = None
-
-        if "target_collection" not in result:
-
-            result["target_collection"] = None
-
-        result["model"] = "DINOv2-Base"
-
-        result["embedding_size"] = 768
-
-        print(
-            "\n[MATCH API]"
-            f" matched={result.get('matched')}"
-            f" best_similarity={best_similarity:.4f}"
-            f" mode={search_mode}"
-            f" source={result.get('source_collection')}"
-            f" target={result.get('target_collection')}"
-            f" results={len(result.get('results', []))}"
+        return jsonify(
+            result
         )
-
-        return jsonify(result)
 
     except Exception as exc:
 
-        print("\n" + "=" * 70)
-
-        print("[MATCH API] ERROR")
-
-        print("=" * 70)
+        print(
+            "[MATCH API ERROR]",
+            exc,
+        )
 
         traceback.print_exc()
 
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "matched": False,
-                    "message": str(exc),
-                    "results": [],
-                    "similarity": 0.0,
-                    "score": 0.0,
-                    "best_similarity": 0.0,
-                    "model": "DINOv2-Base",
-                    "embedding_size": 768,
-                }
-            ),
-            500,
+        return jsonify(
+            {
+                "success": False,
+                "message": str(exc),
+            }
+        ), 500
+
+
+# ============================================================
+# CATALOGUE API
+# ============================================================
+
+@app.get("/api/catalogue")
+def get_catalogue():
+
+    try:
+
+        items = load_catalogue()
+
+        collection_filter = request.args.get(
+            "collection",
+            "all",
         )
 
-    finally:
+        search = request.args.get(
+            "search",
+            "",
+        ).strip().lower()
 
-        if query_path and query_path.exists():
+        if collection_filter:
 
-            try:
+            collection_filter = (
+                collection_filter.strip().lower()
+            )
 
-                query_path.unlink()
+        filtered_items = []
 
-            except Exception as exc:
+        for item in items:
 
-                print(
-                    "[MATCH API] Could not remove " "temporary file:",
-                    exc,
+            item_collection = str(
+                item.get(
+                    "collection",
+                    "",
                 )
+            ).lower()
+
+            if (
+                collection_filter
+                and collection_filter != "all"
+                and item_collection != collection_filter
+            ):
+                continue
+
+            if search:
+
+                searchable = " ".join(
+                    [
+                        str(
+                            item.get(
+                                "id",
+                                "",
+                            )
+                        ),
+                        str(
+                            item.get(
+                                "design_id",
+                                "",
+                            )
+                        ),
+                        str(
+                            item.get(
+                                "name",
+                                "",
+                            )
+                        ),
+                        str(
+                            item.get(
+                                "design_name",
+                                "",
+                            )
+                        ),
+                        str(
+                            item.get(
+                                "type",
+                                "",
+                            )
+                        ),
+                        str(
+                            item.get(
+                                "collection",
+                                "",
+                            )
+                        ),
+                    ]
+                ).lower()
+
+                if search not in searchable:
+                    continue
+
+            filtered_items.append(
+                enrich_catalogue_item(
+                    item
+                )
+            )
+
+        gold_count = sum(
+            1
+            for item in items
+            if str(
+                item.get(
+                    "collection",
+                    "",
+                )
+            ).lower()
+            == "gold"
+        )
+
+        prototype_count = sum(
+            1
+            for item in items
+            if str(
+                item.get(
+                    "collection",
+                    "",
+                )
+            ).lower()
+            == "prototype"
+        )
+
+        return jsonify(
+            {
+                "success": True,
+                "items": filtered_items,
+                "total_count": len(items),
+                "gold_count": gold_count,
+                "prototype_count": prototype_count,
+            }
+        )
+
+    except Exception as exc:
+
+        print(
+            "[CATALOGUE API ERROR]",
+            exc,
+        )
+
+        traceback.print_exc()
+
+        return jsonify(
+            {
+                "success": False,
+                "message": str(exc),
+            }
+        ), 500
+
+
+# ============================================================
+# SINGLE CATALOGUE ITEM
+# ============================================================
+
+@app.get("/api/catalogue/<item_id>")
+def get_catalogue_item(
+    item_id: str,
+):
+
+    items = load_catalogue()
+
+    for item in items:
+
+        current_id = str(
+            item.get(
+                "id",
+                item.get(
+                    "design_id",
+                    "",
+                ),
+            )
+        )
+
+        design_id = str(
+            item.get(
+                "design_id",
+                "",
+            )
+        )
+
+        if (
+            current_id == item_id
+            or design_id == item_id
+        ):
+
+            return jsonify(
+                {
+                    "success": True,
+                    "item": enrich_catalogue_item(
+                        item
+                    ),
+                }
+            )
+
+    return jsonify(
+        {
+            "success": False,
+            "message": "Jewellery item not found.",
+        }
+    ), 404
+
+
+# ============================================================
+# ADD JEWELLERY
+# ============================================================
+
+@app.post("/api/jewellery/add")
+def add_jewellery():
+
+    try:
+
+        uploaded_file = request.files.get(
+            "image"
+        )
+
+        if uploaded_file is None:
+
+            return jsonify(
+                {
+                    "success": False,
+                    "message": "Jewellery image is required.",
+                }
+            ), 400
+
+        if not uploaded_file.filename:
+
+            return jsonify(
+                {
+                    "success": False,
+                    "message": "Jewellery image filename is missing.",
+                }
+            ), 400
+
+        if not allowed_file(
+            uploaded_file.filename
+        ):
+
+            return jsonify(
+                {
+                    "success": False,
+                    "message": "Only JPG, JPEG, PNG, WEBP and BMP images are allowed.",
+                }
+            ), 400
+
+        name = request.form.get(
+            "name",
+            "",
+        ).strip()
+
+        collection = normalize_collection(
+            request.form.get(
+                "collection"
+            )
+        )
+
+        jewellery_type = normalize_type(
+            request.form.get(
+                "type"
+            )
+        )
+
+        description = request.form.get(
+            "description",
+            "",
+        ).strip()
+
+        if not name:
+
+            return jsonify(
+                {
+                    "success": False,
+                    "message": "Jewellery name is required.",
+                }
+            ), 400
+
+        if not collection:
+
+            return jsonify(
+                {
+                    "success": False,
+                    "message": "Please select Gold or Prototype.",
+                }
+            ), 400
+
+        if not jewellery_type:
+
+            return jsonify(
+                {
+                    "success": False,
+                    "message": "Please select a valid jewellery type.",
+                }
+            ), 400
+
+        items = load_catalogue()
+
+        design_id = generate_next_design_id(
+            items
+        )
+
+        extension = (
+            Path(
+                uploaded_file.filename
+            ).suffix.lower()
+        )
+
+        if not extension:
+            extension = ".jpg"
+
+        filename = (
+            f"{design_id}"
+            f"{extension}"
+        )
+
+        collection_dir = get_collection_directory(
+            collection
+        )
+
+        image_path = (
+            collection_dir /
+            filename
+        )
+
+        uploaded_file.save(
+            image_path
+        )
+
+        new_item = {
+            "id": design_id,
+            "design_id": design_id,
+            "name": name,
+            "design_name": name,
+            "collection": collection,
+            "type": jewellery_type,
+            "description": description,
+            "filename": filename,
+            "image_path": str(
+                image_path
+            ),
+        }
+
+        items.append(
+            new_item
+        )
+
+        try:
+
+            save_catalogue(
+                items
+            )
+
+            index_result = rebuild_dino_index()
+
+            if not index_result["success"]:
+
+                raise RuntimeError(
+                    "Jewellery was saved, but DINO index rebuilding failed: "
+                    + index_result["message"]
+                )
+
+        except Exception:
+
+            if image_path.exists():
+
+                try:
+                    image_path.unlink()
+                except Exception:
+                    pass
+
+            raise
+
+        print(
+            f"[CATALOGUE] Added {design_id}"
+        )
+
+        return jsonify(
+            {
+                "success": True,
+                "message": "Jewellery added successfully.",
+                "item": enrich_catalogue_item(
+                    new_item
+                ),
+                "index_rebuilt": True,
+            }
+        ), 201
+
+    except Exception as exc:
+
+        print(
+            "[ADD JEWELLERY ERROR]",
+            exc,
+        )
+
+        traceback.print_exc()
+
+        return jsonify(
+            {
+                "success": False,
+                "message": str(exc),
+            }
+        ), 500
+
+
+# ============================================================
+# UPDATE JEWELLERY
+# ============================================================
+
+@app.post("/api/jewellery/<item_id>")
+def update_jewellery(
+    item_id: str,
+):
+
+    try:
+
+        items = load_catalogue()
+
+        item_index = None
+
+        for index, item in enumerate(
+            items
+        ):
+
+            current_id = str(
+                item.get(
+                    "id",
+                    item.get(
+                        "design_id",
+                        "",
+                    ),
+                )
+            )
+
+            design_id = str(
+                item.get(
+                    "design_id",
+                    "",
+                )
+            )
+
+            if (
+                current_id == item_id
+                or design_id == item_id
+            ):
+
+                item_index = index
+                break
+
+        if item_index is None:
+
+            return jsonify(
+                {
+                    "success": False,
+                    "message": "Jewellery item not found.",
+                }
+            ), 404
+
+        item = dict(
+            items[item_index]
+        )
+
+        name = request.form.get(
+            "name",
+            item.get(
+                "name",
+                "",
+            ),
+        ).strip()
+
+        collection = normalize_collection(
+            request.form.get(
+                "collection",
+                item.get(
+                    "collection",
+                    "",
+                ),
+            )
+        )
+
+        jewellery_type = normalize_type(
+            request.form.get(
+                "type",
+                item.get(
+                    "type",
+                    "",
+                ),
+            )
+        )
+
+        description = request.form.get(
+            "description",
+            item.get(
+                "description",
+                "",
+            ),
+        ).strip()
+
+        if not name:
+
+            return jsonify(
+                {
+                    "success": False,
+                    "message": "Jewellery name is required.",
+                }
+            ), 400
+
+        if not collection:
+
+            return jsonify(
+                {
+                    "success": False,
+                    "message": "Please select Gold or Prototype.",
+                }
+            ), 400
+
+        if not jewellery_type:
+
+            return jsonify(
+                {
+                    "success": False,
+                    "message": "Please select a valid jewellery type.",
+                }
+            ), 400
+
+        old_collection = normalize_collection(
+            item.get(
+                "collection"
+            )
+        )
+
+        old_image_path = Path(
+            item.get(
+                "image_path",
+                "",
+            )
+        )
+
+        new_image = request.files.get(
+            "image"
+        )
+
+        collection_changed = (
+            old_collection != collection
+        )
+
+        image_changed = (
+            new_image is not None
+            and bool(
+                new_image.filename
+            )
+        )
+
+        if image_changed:
+
+            if not allowed_file(
+                new_image.filename
+            ):
+
+                return jsonify(
+                    {
+                        "success": False,
+                        "message": "Unsupported image format.",
+                    }
+                ), 400
+
+            extension = (
+                Path(
+                    new_image.filename
+                ).suffix.lower()
+            )
+
+            filename = (
+                f"{item.get('design_id', item_id)}"
+                f"{extension}"
+            )
+
+            new_directory = get_collection_directory(
+                collection
+            )
+
+            new_image_path = (
+                new_directory /
+                filename
+            )
+
+            new_image.save(
+                new_image_path
+            )
+
+            if (
+                old_image_path.exists()
+                and old_image_path != new_image_path
+            ):
+
+                try:
+                    old_image_path.unlink()
+                except Exception:
+                    pass
+
+            item["filename"] = filename
+
+            item["image_path"] = str(
+                new_image_path
+            )
+
+        elif collection_changed:
+
+            if old_image_path.exists():
+
+                extension = (
+                    old_image_path.suffix
+                    or ".jpg"
+                )
+
+                filename = (
+                    f"{item.get('design_id', item_id)}"
+                    f"{extension}"
+                )
+
+                new_directory = get_collection_directory(
+                    collection
+                )
+
+                new_image_path = (
+                    new_directory /
+                    filename
+                )
+
+                try:
+
+                    old_image_path.rename(
+                        new_image_path
+                    )
+
+                    item["filename"] = filename
+
+                    item["image_path"] = str(
+                        new_image_path
+                    )
+
+                except Exception:
+
+                    pass
+
+        item["name"] = name
+
+        item["design_name"] = name
+
+        item["collection"] = collection
+
+        item["type"] = jewellery_type
+
+        item["description"] = description
+
+        # Remove fields that are no longer part
+        # of the Add Jewellery data model.
+        item.pop(
+            "gender",
+            None,
+        )
+
+        item.pop(
+            "subtype",
+            None,
+        )
+
+        items[item_index] = item
+
+        save_catalogue(
+            items
+        )
+
+        # Rebuild only when the image or collection
+        # changes because those affect the DINO index.
+        index_rebuilt = False
+
+        if (
+            image_changed
+            or collection_changed
+        ):
+
+            index_result = rebuild_dino_index()
+
+            if not index_result["success"]:
+
+                return jsonify(
+                    {
+                        "success": False,
+                        "message": (
+                            "Catalogue updated, "
+                            "but DINO index rebuilding failed: "
+                            + index_result["message"]
+                        ),
+                    }
+                ), 500
+
+            index_rebuilt = True
+
+        return jsonify(
+            {
+                "success": True,
+                "message": "Jewellery updated successfully.",
+                "item": enrich_catalogue_item(
+                    item
+                ),
+                "index_rebuilt": index_rebuilt,
+            }
+        )
+
+    except Exception as exc:
+
+        print(
+            "[UPDATE JEWELLERY ERROR]",
+            exc,
+        )
+
+        traceback.print_exc()
+
+        return jsonify(
+            {
+                "success": False,
+                "message": str(exc),
+            }
+        ), 500
+
+
+# ============================================================
+# DELETE JEWELLERY
+# ============================================================
+
+@app.delete("/api/jewellery/<item_id>")
+def delete_jewellery(
+    item_id: str,
+):
+
+    try:
+
+        items = load_catalogue()
+
+        found_item = None
+
+        remaining_items = []
+
+        for item in items:
+
+            current_id = str(
+                item.get(
+                    "id",
+                    item.get(
+                        "design_id",
+                        "",
+                    ),
+                )
+            )
+
+            design_id = str(
+                item.get(
+                    "design_id",
+                    "",
+                )
+            )
+
+            if (
+                current_id == item_id
+                or design_id == item_id
+            ):
+
+                found_item = item
+
+            else:
+
+                remaining_items.append(
+                    item
+                )
+
+        if found_item is None:
+
+            return jsonify(
+                {
+                    "success": False,
+                    "message": "Jewellery item not found.",
+                }
+            ), 404
+
+        remove_old_image(
+            found_item
+        )
+
+        save_catalogue(
+            remaining_items
+        )
+
+        index_result = rebuild_dino_index()
+
+        if not index_result["success"]:
+
+            return jsonify(
+                {
+                    "success": False,
+                    "message": (
+                        "Jewellery deleted, "
+                        "but DINO index rebuilding failed: "
+                        + index_result["message"]
+                    ),
+                }
+            ), 500
+
+        return jsonify(
+            {
+                "success": True,
+                "message": "Jewellery deleted successfully.",
+                "deleted_id": item_id,
+                "index_rebuilt": True,
+            }
+        )
+
+    except Exception as exc:
+
+        print(
+            "[DELETE JEWELLERY ERROR]",
+            exc,
+        )
+
+        traceback.print_exc()
+
+        return jsonify(
+            {
+                "success": False,
+                "message": str(exc),
+            }
+        ), 500
 
 
 # ============================================================
 # REBUILD INDEX
 # ============================================================
 
-
-@app.route(
-    "/api/rebuild-index",
-    methods=["POST", "GET"],
-)
-def rebuild_index():
+@app.post("/api/rebuild-index")
+def rebuild_index_api():
 
     try:
 
-        print("\n[INDEX] Manual DINOv2-Base " "index rebuild requested.")
+        result = rebuild_dino_index()
 
-        index = build_index(force=True)
+        if not result["success"]:
 
-        entries = index.get(
-            "entries",
-            [],
-        )
-
-        gold_count = sum(
-            1
-            for item in entries
-            if normalize_collection(item.get("collection")) == "gold"
-        )
-
-        prototype_count = sum(
-            1
-            for item in entries
-            if normalize_collection(item.get("collection")) == "prototype"
-        )
+            return jsonify(
+                {
+                    "success": False,
+                    "message": result["message"],
+                }
+            ), 500
 
         return jsonify(
             {
                 "success": True,
-                "message": ("Visual index rebuilt successfully."),
-                "version": index.get("version"),
-                "model": "DINOv2-Base",
-                "embedding_size": 768,
-                "total": len(entries),
-                "gold_count": gold_count,
-                "prototype_count": prototype_count,
+                "message": "DINO search index rebuilt successfully.",
+                "result": result.get(
+                    "result"
+                ),
             }
         )
 
     except Exception as exc:
 
         print(
-            "[INDEX] Rebuild error:",
+            "[REBUILD INDEX ERROR]",
             exc,
         )
 
         traceback.print_exc()
 
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": str(exc),
-                }
-            ),
-            500,
-        )
-
-
-# ============================================================
-# INDEX STATUS
-# ============================================================
-
-
-@app.route(
-    "/api/index/status",
-    methods=["GET"],
-)
-def index_status():
-
-    try:
-
-        index = load_index()
-
-        entries = index.get(
-            "entries",
-            [],
-        )
-
-        gold_count = sum(
-            1
-            for item in entries
-            if normalize_collection(item.get("collection")) == "gold"
-        )
-
-        prototype_count = sum(
-            1
-            for item in entries
-            if normalize_collection(item.get("collection")) == "prototype"
-        )
-
         return jsonify(
-            {
-                "success": True,
-                "version": index.get("version"),
-                "model": "DINOv2-Base",
-                "embedding_size": 768,
-                "total": len(entries),
-                "gold_count": gold_count,
-                "prototype_count": prototype_count,
-            }
-        )
-
-    except Exception as exc:
-
-        print(
-            "[INDEX] Status error:",
-            exc,
-        )
-
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": str(exc),
-                }
-            ),
-            500,
-        )
-
-
-# ============================================================
-# GENERIC UPLOAD
-# ============================================================
-
-
-@app.route(
-    "/api/upload",
-    methods=["POST"],
-)
-def upload():
-
-    try:
-
-        image_file = request.files.get("image") or request.files.get("file")
-
-        if image_file is None:
-
-            return (
-                jsonify(
-                    {
-                        "success": False,
-                        "message": ("No image uploaded."),
-                    }
-                ),
-                400,
-            )
-
-        if not image_file.filename:
-
-            return (
-                jsonify(
-                    {
-                        "success": False,
-                        "message": ("Image filename is empty."),
-                    }
-                ),
-                400,
-            )
-
-        if not allowed_file(image_file.filename):
-
-            return (
-                jsonify(
-                    {
-                        "success": False,
-                        "message": ("Unsupported image format."),
-                    }
-                ),
-                400,
-            )
-
-        filename = generate_unique_filename(image_file.filename)
-
-        path = UPLOAD_DIR / filename
-
-        image_file.save(str(path))
-
-        return jsonify(
-            {
-                "success": True,
-                "filename": filename,
-                "path": str(path),
-            }
-        )
-
-    except Exception as exc:
-
-        print(
-            "[UPLOAD] ERROR:",
-            exc,
-        )
-
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": str(exc),
-                }
-            ),
-            500,
-        )
-
-
-# ============================================================
-# ERROR HANDLERS
-# ============================================================
-
-
-@app.errorhandler(413)
-def file_too_large(error):
-
-    return (
-        jsonify(
             {
                 "success": False,
-                "message": ("Image is too large. " "Maximum upload size is 20 MB."),
+                "message": str(exc),
             }
-        ),
-        413,
+        ), 500
+
+
+# ============================================================
+# CATALOGUE IMAGE
+# ============================================================
+
+@app.get(
+    "/catalogue-image/<collection>/<path:filename>"
+)
+def catalogue_image(
+    collection: str,
+    filename: str,
+):
+
+    collection_normalized = normalize_collection(
+        collection
     )
 
+    if collection_normalized == "Gold":
 
-@app.errorhandler(404)
-def not_found(error):
+        directory = GOLD_DIR
 
-    if request.path.startswith("/api/"):
+    elif collection_normalized == "Prototype":
 
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": ("API endpoint not found."),
-                }
-            ),
-            404,
-        )
+        directory = PROTOTYPE_DIR
 
-    return (
-        "Page not found.",
-        404,
+    else:
+
+        return jsonify(
+            {
+                "success": False,
+                "message": "Invalid collection.",
+            }
+        ), 400
+
+    return send_from_directory(
+        directory,
+        filename,
     )
 
 
 # ============================================================
-# STARTUP
+# RUN
 # ============================================================
-
-
-def startup():
-
-    print("\n" + "=" * 70)
-
-    print("JEWELMATCH AI BACKEND")
-
-    print("=" * 70)
-
-    print(
-        "Project:",
-        PROJECT_DIR,
-    )
-
-    print(
-        "Catalogue:",
-        JEWELLERY_JSON,
-    )
-
-    print(
-        "Gold:",
-        GOLD_DIR,
-    )
-
-    print(
-        "Prototype:",
-        PROTOTYPE_DIR,
-    )
-
-    print(
-        "Uploads:",
-        UPLOAD_DIR,
-    )
-
-    print(
-        "Matching:",
-        "DINOv2-Base / 768D / CPU / Visual Search",
-    )
-
-    print(
-        "Segmentation:",
-        "Lightweight OpenCV",
-    )
-
-    print(
-        "Search modes:",
-        "All / Gold → Prototype / Prototype → Gold",
-    )
-
-    print("=" * 70)
-
-
-# ============================================================
-# MAIN
-# ============================================================
-
 
 if __name__ == "__main__":
 
-    startup()
-
     port = int(
-        os.getenv(
+        os.environ.get(
             "PORT",
-            "5000",
+            5000,
         )
     )
 
-    app.run(
-        host="0.0.0.0",
-        port=port,
-        debug=False,
-        use_reloader=False,
+    host = os.environ.get(
+        "HOST",
+        "0.0.0.0",
     )
 
-else:
+    print(
+        ""
+    )
 
-    startup()
+    print(
+        "=" * 70
+    )
+
+    print(
+        "JewelMatch AI Backend"
+    )
+
+    print(
+        "=" * 70
+    )
+
+    print(
+        f"Host : {host}"
+    )
+
+    print(
+        f"Port : {port}"
+    )
+
+    print(
+        "=" * 70
+    )
+
+    app.run(
+        host=host,
+        port=port,
+        debug=True,
+    )

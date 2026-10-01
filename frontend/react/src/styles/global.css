@@ -1,0 +1,322 @@
+* {
+  box-sizing: border-box;
+}
+
+
+html {
+  scroll-behavior: smooth;
+}
+
+
+body {
+  margin: 0;
+
+  min-width: 320px;
+
+  font-family:
+    Inter,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+
+  color: #2f2822;
+
+  background: #faf4ec;
+
+  -webkit-font-smoothing: antialiased;
+}
+
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+
+button {
+  cursor: pointer;
+}
+
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+
+img {
+  max-width: 100%;
+
+  display: block;
+}
+
+
+a {
+  color: inherit;
+
+  text-decoration: none;
+}
+
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.site-header {
+  width: 100%;
+
+  min-height: 70px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding:
+    12px
+    max(
+      20px,
+      calc(
+        (100vw - 1160px) / 2
+      )
+    );
+
+  border-bottom:
+    1px solid
+    rgba(185, 133, 50, 0.14);
+
+  background:
+    rgba(255, 252, 247, 0.82);
+
+  backdrop-filter:
+    blur(16px);
+
+  position: relative;
+
+  z-index: 10;
+}
+
+
+.brand {
+  display: flex;
+
+  align-items: center;
+
+  gap: 9px;
+}
+
+
+.brand-mark {
+  width: 34px;
+
+  height: 34px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  border-radius: 11px;
+
+  background:
+    #f0dfc3;
+
+  color:
+    #9b6b24;
+
+  font-size: 16px;
+}
+
+
+.brand-text {
+  display: flex;
+
+  align-items: baseline;
+
+  gap: 3px;
+}
+
+
+.brand-text strong {
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+
+  font-size: 17px;
+
+  color:
+    #352d27;
+}
+
+
+.brand-text small {
+  color:
+    #a7752a;
+
+  font-size: 10px;
+
+  font-weight: 800;
+}
+
+
+.header-navigation {
+  display: flex;
+
+  align-items: center;
+
+  gap: 7px;
+}
+
+
+.nav-button {
+  display: inline-flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  min-height: 35px;
+
+  padding:
+    0
+    13px;
+
+  border-radius: 9px;
+
+  font-size: 10px;
+
+  font-weight: 750;
+
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease;
+}
+
+
+.nav-button:hover {
+  transform:
+    translateY(-1px);
+}
+
+
+.nav-button.secondary {
+  border:
+    1px solid
+    rgba(185, 133, 50, 0.23);
+
+  background:
+    rgba(255, 255, 255, 0.8);
+
+  color:
+    #70532d;
+}
+
+
+.nav-button.secondary.active {
+  background:
+    #f4e7d4;
+}
+
+
+.nav-button.primary {
+  background:
+    #a97429;
+
+  color:
+    white;
+
+  box-shadow:
+    0 6px 15px
+    rgba(157, 111, 37, 0.16);
+}
+
+
+.nav-button.primary.active {
+  background:
+    #91651f;
+}
+
+
+/* =========================================================
+   GLOBAL LOADING
+========================================================= */
+
+.loading-spinner {
+  width: 30px;
+
+  height: 30px;
+
+  border-radius: 50%;
+
+  border:
+    3px solid
+    rgba(185, 133, 50, 0.16);
+
+  border-top-color:
+    #a97429;
+
+  animation:
+    spin 0.8s linear infinite;
+}
+
+
+@keyframes spin {
+  to {
+    transform:
+      rotate(360deg);
+  }
+}
+
+
+/* =========================================================
+   MOBILE HEADER
+========================================================= */
+
+@media (max-width: 600px) {
+
+  .site-header {
+    min-height: 64px;
+
+    padding:
+      10px
+      12px;
+
+    gap: 8px;
+  }
+
+
+  .brand-text strong {
+    font-size: 15px;
+  }
+
+
+  .brand-mark {
+    width: 31px;
+
+    height: 31px;
+  }
+
+
+  .header-navigation {
+    gap: 5px;
+  }
+
+
+  .nav-button {
+    padding:
+      0
+      9px;
+
+    min-height: 33px;
+
+    font-size: 9px;
+  }
+
+}

@@ -1,0 +1,1137 @@
+/* =========================================================
+   CATALOGUE
+========================================================= */
+
+.catalogue-page {
+  min-height:
+    100vh;
+
+  background:
+    linear-gradient(
+      rgba(250, 244, 236, 0.93),
+      rgba(250, 244, 236, 0.99)
+    ),
+    url("/static/images/jewellery-background.jpg");
+
+  background-size:
+    cover;
+
+  background-position:
+    center;
+
+  background-attachment:
+    fixed;
+}
+
+
+.catalogue-main {
+  width:
+    min(
+      1160px,
+      calc(100% - 40px)
+    );
+
+  margin:
+    auto;
+
+  padding:
+    38px
+    0
+    65px;
+}
+
+
+/* =========================================================
+   HEADING
+========================================================= */
+
+.catalogue-heading {
+  display:
+    flex;
+
+  align-items:
+    flex-end;
+
+  justify-content:
+    space-between;
+
+  gap:
+    20px;
+
+  margin-bottom:
+    20px;
+}
+
+
+.catalogue-eyebrow {
+  color:
+    #a97429;
+
+  font-size:
+    9px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    1px;
+
+  text-transform:
+    uppercase;
+}
+
+
+.catalogue-heading h1 {
+  margin-top:
+    5px;
+
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+
+  font-size:
+    38px;
+}
+
+
+.catalogue-heading p {
+  margin-top:
+    5px;
+
+  color:
+    #8e8279;
+
+  font-size:
+    11px;
+}
+
+
+.rebuild-index-button {
+  padding:
+    10px
+    13px;
+
+  border:
+    1px solid
+    rgba(185, 133, 50, 0.24);
+
+  border-radius:
+    10px;
+
+  background:
+    white;
+
+  color:
+    #795820;
+
+  font-size:
+    9px;
+
+  font-weight:
+    750;
+}
+
+
+.rebuild-index-button:disabled {
+  opacity:
+    0.55;
+}
+
+
+/* =========================================================
+   STATS
+========================================================= */
+
+.catalogue-statistics {
+  display:
+    grid;
+
+  grid-template-columns:
+    repeat(3, 1fr);
+
+  gap:
+    10px;
+
+  margin-bottom:
+    15px;
+}
+
+
+.catalogue-stat {
+  padding:
+    14px;
+
+  border:
+    1px solid
+    rgba(185, 133, 50, 0.12);
+
+  border-radius:
+    15px;
+
+  background:
+    rgba(255, 255, 255, 0.8);
+}
+
+
+.catalogue-stat span {
+  color:
+    #93877e;
+
+  font-size:
+    9px;
+}
+
+
+.catalogue-stat strong {
+  display:
+    block;
+
+  margin-top:
+    4px;
+
+  color:
+    #a97429;
+
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+
+  font-size:
+    24px;
+}
+
+
+/* =========================================================
+   CONTROLS
+========================================================= */
+
+.catalogue-controls {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
+  gap:
+    10px;
+
+  margin-bottom:
+    17px;
+}
+
+
+.catalogue-search {
+  flex:
+    1;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  gap:
+    7px;
+
+  padding:
+    0
+    11px;
+
+  min-height:
+    39px;
+
+  border:
+    1px solid
+    rgba(185, 133, 50, 0.15);
+
+  border-radius:
+    10px;
+
+  background:
+    rgba(255, 255, 255, 0.82);
+}
+
+
+.catalogue-search span {
+  color:
+    #a97429;
+
+  font-size:
+    16px;
+}
+
+
+.catalogue-search input {
+  width:
+    100%;
+
+  border:
+    0;
+
+  outline:
+    0;
+
+  background:
+    transparent;
+
+  color:
+    #3b322c;
+
+  font-size:
+    10px;
+}
+
+
+.catalogue-filters {
+  display:
+    flex;
+
+  gap:
+    5px;
+}
+
+
+.catalogue-filters button {
+  padding:
+    8px
+    11px;
+
+  border:
+    1px solid
+    rgba(185, 133, 50, 0.15);
+
+  border-radius:
+    8px;
+
+  background:
+    white;
+
+  color:
+    #806f61;
+
+  font-size:
+    9px;
+
+  font-weight:
+    700;
+}
+
+
+.catalogue-filters button.active {
+  border-color:
+    #a97429;
+
+  background:
+    #a97429;
+
+  color:
+    white;
+}
+
+
+/* =========================================================
+   MESSAGES
+========================================================= */
+
+.catalogue-message {
+  margin-bottom:
+    12px;
+
+  padding:
+    10px;
+
+  border-radius:
+    9px;
+
+  font-size:
+    9px;
+}
+
+
+.catalogue-message.error {
+  background:
+    #fff0ed;
+
+  color:
+    #995047;
+}
+
+
+.catalogue-message.success {
+  background:
+    #eef8ef;
+
+  color:
+    #47704a;
+}
+
+
+/* =========================================================
+   GRID
+========================================================= */
+
+.catalogue-grid {
+  display:
+    grid;
+
+  grid-template-columns:
+    repeat(4, 1fr);
+
+  gap:
+    12px;
+}
+
+
+/* =========================================================
+   CARD
+========================================================= */
+
+.catalogue-card {
+  overflow:
+    hidden;
+
+  border:
+    1px solid
+    rgba(185, 133, 50, 0.12);
+
+  border-radius:
+    16px;
+
+  background:
+    rgba(255, 255, 255, 0.9);
+
+  box-shadow:
+    0 7px 20px
+    rgba(91, 61, 25, 0.06);
+}
+
+
+.catalogue-card-image {
+  position:
+    relative;
+
+  height:
+    245px;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    center;
+
+  background:
+    #f8f4ee;
+}
+
+
+.catalogue-card-image img {
+  width:
+    100%;
+
+  height:
+    100%;
+
+  object-fit:
+    contain;
+
+  padding:
+    8px;
+}
+
+
+.catalogue-id {
+  position:
+    absolute;
+
+  top:
+    8px;
+
+  left:
+    8px;
+
+  padding:
+    4px
+    6px;
+
+  border-radius:
+    6px;
+
+  background:
+    rgba(61, 45, 28, 0.78);
+
+  color:
+    white;
+
+  font-size:
+    7px;
+
+  font-weight:
+    800;
+}
+
+
+.catalogue-no-image {
+  color:
+    #a79b91;
+
+  font-size:
+    9px;
+}
+
+
+.catalogue-card-body {
+  padding:
+    11px;
+}
+
+
+.catalogue-small-label {
+  color:
+    #a97429;
+
+  font-size:
+    7px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    0.5px;
+
+  text-transform:
+    uppercase;
+}
+
+
+.catalogue-card h3 {
+  margin-top:
+    3px;
+
+  overflow:
+    hidden;
+
+  text-overflow:
+    ellipsis;
+
+  white-space:
+    nowrap;
+
+  font-size:
+    12px;
+}
+
+
+.catalogue-card-meta {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
+  margin-top:
+    9px;
+
+  padding:
+    6px
+    7px;
+
+  border-radius:
+    7px;
+
+  background:
+    #faf5ec;
+}
+
+
+.catalogue-card-meta span {
+  color:
+    #9b8f85;
+
+  font-size:
+    7px;
+}
+
+
+.catalogue-card-meta strong {
+  color:
+    #77541e;
+
+  font-size:
+    8px;
+}
+
+
+.catalogue-description {
+  margin-top:
+    7px;
+
+  display:
+    -webkit-box;
+
+  -webkit-line-clamp:
+    2;
+
+  -webkit-box-orient:
+    vertical;
+
+  overflow:
+    hidden;
+
+  color:
+    #93877e;
+
+  font-size:
+    8px;
+
+  line-height:
+    1.45;
+}
+
+
+.catalogue-card-actions {
+  display:
+    grid;
+
+  grid-template-columns:
+    1fr
+    1fr;
+
+  gap:
+    5px;
+
+  margin-top:
+    10px;
+}
+
+
+.catalogue-card-actions button {
+  padding:
+    7px;
+
+  border-radius:
+    8px;
+
+  font-size:
+    8px;
+
+  font-weight:
+    750;
+}
+
+
+.catalogue-edit-button {
+  border:
+    1px solid
+    rgba(185, 133, 50, 0.22);
+
+  background:
+    white;
+
+  color:
+    #795820;
+}
+
+
+.catalogue-delete-button {
+  border:
+    1px solid
+    rgba(155, 76, 65, 0.16);
+
+  background:
+    #fff5f2;
+
+  color:
+    #955047;
+}
+
+
+/* =========================================================
+   LOADING / EMPTY
+========================================================= */
+
+.catalogue-loading,
+.catalogue-empty {
+  min-height:
+    300px;
+
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  align-items:
+    center;
+
+  justify-content:
+    center;
+
+  text-align:
+    center;
+}
+
+
+.catalogue-loading p,
+.catalogue-empty p {
+  margin-top:
+    10px;
+
+  color:
+    #988c82;
+
+  font-size:
+    10px;
+}
+
+
+.catalogue-empty > div {
+  width:
+    50px;
+
+  height:
+    50px;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    center;
+
+  border-radius:
+    15px;
+
+  background:
+    #f1e2cb;
+
+  color:
+    #a97429;
+
+  font-size:
+    20px;
+}
+
+
+.catalogue-empty h2 {
+  margin-top:
+    11px;
+
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+
+  font-size:
+    19px;
+}
+
+
+/* =========================================================
+   EDIT MODAL
+========================================================= */
+
+.edit-overlay {
+  position:
+    fixed;
+
+  inset:
+    0;
+
+  z-index:
+    1000;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    center;
+
+  padding:
+    18px;
+
+  background:
+    rgba(40, 31, 23, 0.57);
+
+  backdrop-filter:
+    blur(6px);
+}
+
+
+.edit-modal {
+  width:
+    min(
+      520px,
+      100%
+    );
+
+  max-height:
+    92vh;
+
+  overflow:
+    auto;
+
+  border-radius:
+    19px;
+
+  background:
+    #fffaf4;
+
+  box-shadow:
+    0 25px 70px
+    rgba(0, 0, 0, 0.23);
+}
+
+
+.edit-modal-header {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
+  padding:
+    15px
+    17px;
+
+  border-bottom:
+    1px solid
+    rgba(185, 133, 50, 0.1);
+}
+
+
+.edit-modal-header span {
+  color:
+    #a97429;
+
+  font-size:
+    8px;
+
+  font-weight:
+    800;
+
+  text-transform:
+    uppercase;
+
+  letter-spacing:
+    1px;
+}
+
+
+.edit-modal-header h2 {
+  margin-top:
+    3px;
+
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+
+  font-size:
+    18px;
+}
+
+
+.edit-modal-header button {
+  width:
+    29px;
+
+  height:
+    29px;
+
+  border:
+    0;
+
+  border-radius:
+    50%;
+
+  background:
+    #f2e5d5;
+
+  color:
+    #6b5031;
+
+  font-size:
+    18px;
+}
+
+
+.edit-form {
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  gap:
+    12px;
+
+  padding:
+    17px;
+}
+
+
+.edit-form-group {
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  gap:
+    5px;
+}
+
+
+.edit-form-group label {
+  color:
+    #51463e;
+
+  font-size:
+    9px;
+
+  font-weight:
+    750;
+}
+
+
+.edit-form-group input,
+.edit-form-group select,
+.edit-form-group textarea {
+  width:
+    100%;
+
+  padding:
+    9px
+    10px;
+
+  border:
+    1px solid
+    rgba(185, 133, 50, 0.16);
+
+  border-radius:
+    9px;
+
+  outline:
+    none;
+
+  background:
+    white;
+
+  color:
+    #3a322c;
+
+  font-size:
+    10px;
+}
+
+
+.edit-form-group textarea {
+  resize:
+    vertical;
+}
+
+
+.edit-actions {
+  display:
+    flex;
+
+  justify-content:
+    flex-end;
+
+  gap:
+    7px;
+
+  margin-top:
+    3px;
+}
+
+
+.edit-actions button {
+  padding:
+    9px
+    13px;
+
+  border-radius:
+    9px;
+
+  font-size:
+    9px;
+
+  font-weight:
+    750;
+}
+
+
+.edit-cancel {
+  border:
+    1px solid
+    rgba(185, 133, 50, 0.2);
+
+  background:
+    white;
+
+  color:
+    #806f61;
+}
+
+
+.edit-save {
+  border:
+    0;
+
+  background:
+    #a97429;
+
+  color:
+    white;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 1000px) {
+
+  .catalogue-grid {
+    grid-template-columns:
+      repeat(3, 1fr);
+  }
+
+}
+
+
+@media (max-width: 750px) {
+
+  .catalogue-heading {
+    align-items:
+      flex-start;
+
+    flex-direction:
+      column;
+  }
+
+
+  .catalogue-controls {
+    align-items:
+      stretch;
+
+    flex-direction:
+      column;
+  }
+
+
+  .catalogue-filters {
+    width:
+      100%;
+  }
+
+
+  .catalogue-filters button {
+    flex:
+      1;
+  }
+
+
+  .catalogue-grid {
+    grid-template-columns:
+      repeat(2, 1fr);
+  }
+
+}
+
+
+@media (max-width: 600px) {
+
+  .catalogue-main {
+    width:
+      calc(100% - 24px);
+
+    padding-top:
+      25px;
+  }
+
+
+  .catalogue-statistics {
+    gap:
+      6px;
+  }
+
+
+  .catalogue-stat {
+    padding:
+      10px;
+  }
+
+
+  .catalogue-stat strong {
+    font-size:
+      19px;
+  }
+
+
+  .catalogue-grid {
+    gap:
+      8px;
+  }
+
+
+  .catalogue-card-image {
+    height:
+      190px;
+  }
+
+
+  .catalogue-card-body {
+    padding:
+      8px;
+  }
+
+
+  .catalogue-card h3 {
+    font-size:
+      10px;
+  }
+
+}
+
+
+@media (max-width: 420px) {
+
+  .catalogue-grid {
+    grid-template-columns:
+      repeat(2, 1fr);
+  }
+
+
+  .catalogue-card-image {
+    height:
+      155px;
+  }
+
+
+  .catalogue-description {
+    display:
+      none;
+  }
+
+}
