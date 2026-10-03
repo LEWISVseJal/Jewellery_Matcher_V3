@@ -4,7 +4,6 @@
 
 from pathlib import Path
 from datetime import datetime, timezone
-
 from urllib.parse import quote
 
 from flask import (
@@ -13,9 +12,7 @@ from flask import (
     request,
     send_from_directory,
 )
-
 from flask_cors import CORS
-
 from werkzeug.utils import secure_filename
 
 
@@ -58,7 +55,6 @@ CORS(app)
 # ============================================================
 
 # Maximum image upload size = 10 MB
-
 app.config["MAX_CONTENT_LENGTH"] = (
     10 * 1024 * 1024
 )
@@ -155,7 +151,6 @@ VALID_JEWELLERY_TYPES = {
 # ============================================================
 
 def normalize_collection(value):
-
     if value is None:
         return None
 
@@ -175,7 +170,6 @@ def normalize_collection(value):
 # ============================================================
 
 def allowed_file(filename):
-
     if not filename:
         return False
 
@@ -196,7 +190,6 @@ def allowed_file(filename):
 # ============================================================
 
 def get_item_filename(item):
-
     if not item:
         return None
 
@@ -229,7 +222,6 @@ def get_item_filename(item):
 # ============================================================
 
 def get_item_collection(item):
-
     if not item:
         return None
 
@@ -243,7 +235,6 @@ def get_item_collection(item):
 # ============================================================
 
 def add_image_url(item):
-
     if not item:
         return item
 
@@ -258,7 +249,6 @@ def add_image_url(item):
     )
 
     if collection and filename:
-
         encoded_filename = quote(
             filename,
             safe=""
@@ -272,9 +262,7 @@ def add_image_url(item):
 
         # Keep image/filename clean
         # for frontend compatibility.
-
         item["image"] = filename
-
         item["filename"] = filename
 
     return item
@@ -285,7 +273,6 @@ def add_image_url(item):
 # ============================================================
 
 def serialize_mongo_item(item):
-
     if not item:
         return item
 
@@ -293,7 +280,6 @@ def serialize_mongo_item(item):
 
     # MongoDB ObjectId cannot be
     # returned directly through jsonify.
-
     item.pop("_id", None)
 
     return add_image_url(item)
@@ -304,26 +290,7 @@ def serialize_mongo_item(item):
 # ============================================================
 
 def get_catalogue_collection():
-
     return get_jewellery_collection()
-
-
-# ============================================================
-# HOME
-# ============================================================
-
-@app.get("/")
-def home():
-
-    return jsonify(
-        {
-            "success": True,
-            "message": (
-                "JewelMatch AI backend "
-                "is running."
-            ),
-        }
-    )
 
 
 # ============================================================
@@ -332,9 +299,7 @@ def home():
 
 @app.get("/api/health")
 def health():
-
     try:
-
         mongo_ok = (
             test_mongodb_connection()
         )
@@ -348,7 +313,6 @@ def health():
         )
 
     except Exception as exc:
-
         print(
             "Health check error:",
             repr(exc)
@@ -368,9 +332,7 @@ def health():
 
 @app.get("/api/ai-status")
 def ai_status():
-
     try:
-
         status = get_ai_status()
 
         return jsonify(
@@ -381,7 +343,6 @@ def ai_status():
         )
 
     except Exception as exc:
-
         print(
             "AI status error:",
             repr(exc)
@@ -401,9 +362,7 @@ def ai_status():
 
 @app.get("/api/catalogue")
 def get_catalogue():
-
     try:
-
         collection_name = (
             request.args
             .get(
@@ -436,7 +395,6 @@ def get_catalogue():
             "gold",
             "prototype",
         }:
-
             return jsonify(
                 {
                     "success": False,
@@ -456,7 +414,6 @@ def get_catalogue():
             "gold",
             "prototype",
         }:
-
             query["collection"] = (
                 VALID_COLLECTIONS[
                     collection_name
@@ -468,58 +425,49 @@ def get_catalogue():
         # ----------------------------------------------------
 
         if search_text:
-
             query["$or"] = [
-
                 {
                     "id": {
                         "$regex": search_text,
                         "$options": "i",
                     }
                 },
-
                 {
                     "design_id": {
                         "$regex": search_text,
                         "$options": "i",
                     }
                 },
-
                 {
                     "name": {
                         "$regex": search_text,
                         "$options": "i",
                     }
                 },
-
                 {
                     "design_name": {
                         "$regex": search_text,
                         "$options": "i",
                     }
                 },
-
                 {
                     "type": {
                         "$regex": search_text,
                         "$options": "i",
                     }
                 },
-
                 {
                     "subtype": {
                         "$regex": search_text,
                         "$options": "i",
                     }
                 },
-
                 {
                     "description": {
                         "$regex": search_text,
                         "$options": "i",
                     }
                 },
-
             ]
 
         # ----------------------------------------------------
@@ -588,16 +536,13 @@ def get_catalogue():
         return jsonify(
             {
                 "success": True,
-
                 "items": items,
 
                 # Number of records after
                 # current filter/search.
-
                 "count": len(items),
 
                 # Overall catalogue counts.
-
                 "total_count":
                     total_count,
 
@@ -610,7 +555,6 @@ def get_catalogue():
         )
 
     except Exception as exc:
-
         print(
             "Catalogue error:",
             repr(exc)
@@ -632,7 +576,6 @@ def get_catalogue():
     "/api/catalogue/<item_id>"
 )
 def get_catalogue_item(item_id):
-
     return get_single_jewellery_item(
         item_id
     )
@@ -646,7 +589,6 @@ def get_catalogue_item(item_id):
     "/api/jewellery/<item_id>"
 )
 def get_jewellery_item(item_id):
-
     return get_single_jewellery_item(
         item_id
     )
@@ -656,12 +598,8 @@ def get_jewellery_item(item_id):
 # SHARED GET SINGLE JEWELLERY
 # ============================================================
 
-def get_single_jewellery_item(
-    item_id
-):
-
+def get_single_jewellery_item(item_id):
     try:
-
         mongo_collection = (
             get_catalogue_collection()
         )
@@ -679,7 +617,6 @@ def get_single_jewellery_item(
         )
 
         if not item:
-
             return jsonify(
                 {
                     "success": False,
@@ -701,7 +638,6 @@ def get_single_jewellery_item(
         )
 
     except Exception as exc:
-
         print(
             "Get jewellery error:",
             repr(exc)
@@ -728,9 +664,7 @@ def catalogue_image(
     collection,
     filename
 ):
-
     try:
-
         collection = (
             collection
             .strip()
@@ -742,15 +676,12 @@ def catalogue_image(
         # ----------------------------------------------------
 
         if collection == "gold":
-
             directory = GOLD_DIR
 
         elif collection == "prototype":
-
             directory = PROTOTYPE_DIR
 
         else:
-
             return jsonify(
                 {
                     "success": False,
@@ -769,7 +700,6 @@ def catalogue_image(
         )
 
         if not safe_filename:
-
             return jsonify(
                 {
                     "success": False,
@@ -784,12 +714,11 @@ def catalogue_image(
         # ----------------------------------------------------
 
         return send_from_directory(
-            directory,
+            str(directory),
             safe_filename
         )
 
     except Exception as exc:
-
         print(
             "Catalogue image error:",
             repr(exc)
@@ -810,9 +739,7 @@ def catalogue_image(
 def generate_next_jewellery_id(
     mongo_collection
 ):
-
     try:
-
         documents = (
             mongo_collection
             .find(
@@ -832,7 +759,6 @@ def generate_next_jewellery_id(
         highest_number = 0
 
         for document in documents:
-
             item_id = str(
                 document.get(
                     "id",
@@ -853,7 +779,6 @@ def generate_next_jewellery_id(
             )
 
             if number > highest_number:
-
                 highest_number = number
 
         next_number = (
@@ -865,12 +790,10 @@ def generate_next_jewellery_id(
         )
 
     except Exception as exc:
-
         print(
             "Generate ID error:",
             repr(exc)
         )
-
         raise
 
 
@@ -888,9 +811,7 @@ def generate_next_jewellery_id(
 
 @app.post("/api/catalogue")
 def add_jewellery():
-
     try:
-
         # ----------------------------------------------------
         # MONGODB
         # ----------------------------------------------------
@@ -944,7 +865,6 @@ def add_jewellery():
         # ----------------------------------------------------
 
         if not name:
-
             return jsonify(
                 {
                     "success": False,
@@ -970,7 +890,6 @@ def add_jewellery():
         )
 
         if not collection:
-
             return jsonify(
                 {
                     "success": False,
@@ -990,7 +909,6 @@ def add_jewellery():
         # ----------------------------------------------------
 
         if not jewellery_type:
-
             return jsonify(
                 {
                     "success": False,
@@ -1014,7 +932,6 @@ def add_jewellery():
         )
 
         if not image_file:
-
             return jsonify(
                 {
                     "success": False,
@@ -1030,7 +947,6 @@ def add_jewellery():
             ), 400
 
         if not image_file.filename:
-
             return jsonify(
                 {
                     "success": False,
@@ -1050,7 +966,6 @@ def add_jewellery():
         if not allowed_file(
             image_file.filename
         ):
-
             return jsonify(
                 {
                     "success": False,
@@ -1091,7 +1006,6 @@ def add_jewellery():
         )
 
         if not original_filename:
-
             return jsonify(
                 {
                     "success": False,
@@ -1110,11 +1024,8 @@ def add_jewellery():
         # ----------------------------------------------------
 
         if collection == "gold":
-
             target_directory = GOLD_DIR
-
         else:
-
             target_directory = (
                 PROTOTYPE_DIR
             )
@@ -1129,20 +1040,16 @@ def add_jewellery():
         # ----------------------------------------------------
 
         target_path = (
-            target_directory /
-            original_filename
+            target_directory
+            / original_filename
         )
 
         if target_path.exists():
-
             stem = target_path.stem
-
             suffix = target_path.suffix
-
             counter = 1
 
             while target_path.exists():
-
                 new_filename = (
                     f"{stem}_"
                     f"{counter}"
@@ -1150,8 +1057,8 @@ def add_jewellery():
                 )
 
                 target_path = (
-                    target_directory /
-                    new_filename
+                    target_directory
+                    / new_filename
                 )
 
                 counter += 1
@@ -1178,7 +1085,6 @@ def add_jewellery():
         # ----------------------------------------------------
 
         new_item = {
-
             "id":
                 jewellery_id,
 
@@ -1207,13 +1113,11 @@ def add_jewellery():
 
             # New jewellery waits for
             # background AI processing.
-
             "ai_status":
                 "pending",
 
             # Timestamp used by the AI queue
             # for the one-hour processing rule.
-
             "ai_queued_at":
                 datetime.now(
                     timezone.utc
@@ -1237,7 +1141,6 @@ def add_jewellery():
         )
 
         # Remove ObjectId before JSON.
-
         new_item.pop(
             "_id",
             None
@@ -1248,7 +1151,6 @@ def add_jewellery():
         # ----------------------------------------------------
 
         try:
-
             start_ai_worker()
 
             print(
@@ -1257,7 +1159,6 @@ def add_jewellery():
             )
 
         except Exception as worker_exc:
-
             print(
                 "AI worker warning:",
                 repr(worker_exc)
@@ -1276,21 +1177,18 @@ def add_jewellery():
         return jsonify(
             {
                 "success": True,
-
                 "message": (
                     "Jewellery added "
                     "successfully. "
                     "AI processing will "
                     "be completed automatically."
                 ),
-
                 "item":
                     response_item,
             }
         ), 201
 
     except Exception as exc:
-
         print(
             "Add jewellery error:",
             repr(exc)
@@ -1299,11 +1197,9 @@ def add_jewellery():
         return jsonify(
             {
                 "success": False,
-
                 "message": (
                     "Unable to add jewellery."
                 ),
-
                 "error": str(exc),
             }
         ), 500
@@ -1319,7 +1215,6 @@ def add_jewellery():
 
 @app.post("/api/jewellery/add")
 def add_jewellery_compatibility():
-
     return add_jewellery()
 
 
@@ -1331,7 +1226,6 @@ def add_jewellery_compatibility():
     "/api/catalogue/<item_id>"
 )
 def delete_catalogue_item(item_id):
-
     return delete_jewellery_item(
         item_id
     )
@@ -1347,7 +1241,6 @@ def delete_catalogue_item(item_id):
 def delete_jewellery_compatibility(
     item_id
 ):
-
     return delete_jewellery_item(
         item_id
     )
@@ -1360,9 +1253,7 @@ def delete_jewellery_compatibility(
 def delete_jewellery_item(
     item_id
 ):
-
     try:
-
         mongo_collection = (
             get_catalogue_collection()
         )
@@ -1381,7 +1272,6 @@ def delete_jewellery_item(
         )
 
         if not item:
-
             return jsonify(
                 {
                     "success": False,
@@ -1410,32 +1300,26 @@ def delete_jewellery_item(
         if collection and filename:
 
             if collection == "gold":
-
                 image_directory = (
                     GOLD_DIR
                 )
 
             elif collection == "prototype":
-
                 image_directory = (
                     PROTOTYPE_DIR
                 )
 
             else:
-
                 image_directory = None
 
             if image_directory:
-
                 image_path = (
-                    image_directory /
-                    filename
+                    image_directory
+                    / filename
                 )
 
                 if image_path.exists():
-
                     try:
-
                         image_path.unlink()
 
                         print(
@@ -1444,7 +1328,6 @@ def delete_jewellery_item(
                         )
 
                     except Exception as image_exc:
-
                         print(
                             "Image delete warning:",
                             repr(image_exc)
@@ -1464,7 +1347,6 @@ def delete_jewellery_item(
         )
 
         if result.deleted_count == 0:
-
             return jsonify(
                 {
                     "success": False,
@@ -1478,19 +1360,16 @@ def delete_jewellery_item(
         return jsonify(
             {
                 "success": True,
-
                 "message": (
                     "Jewellery deleted "
                     "successfully."
                 ),
-
                 "id":
                     item_id,
             }
         ), 200
 
     except Exception as exc:
-
         print(
             "Delete jewellery error:",
             repr(exc)
@@ -1510,11 +1389,9 @@ def delete_jewellery_item(
 
 @app.post("/api/match")
 def match():
-
     query_path = None
 
     try:
-
         # ----------------------------------------------------
         # IMAGE
         # ----------------------------------------------------
@@ -1524,14 +1401,12 @@ def match():
         )
 
         if not image_file:
-
             return jsonify({
                 "success": False,
                 "error": "Image is required.",
             }), 400
 
         if not image_file.filename:
-
             return jsonify({
                 "success": False,
                 "error": "Invalid image.",
@@ -1540,7 +1415,6 @@ def match():
         if not allowed_file(
             image_file.filename
         ):
-
             return jsonify({
                 "success": False,
                 "error": (
@@ -1550,14 +1424,12 @@ def match():
 
         # ----------------------------------------------------
         # SEARCH MODE
-        # ----------------------------------------------------
         #
         # Frontend can send:
         #
         # all
         # gold_to_prototype
         # prototype_to_gold
-        #
         # ----------------------------------------------------
 
         search_mode = (
@@ -1577,7 +1449,6 @@ def match():
         }
 
         if search_mode not in valid_search_modes:
-
             return jsonify({
                 "success": False,
                 "error": "Invalid search mode.",
@@ -1605,7 +1476,6 @@ def match():
         )
 
         if not filename:
-
             return jsonify({
                 "success": False,
                 "error": (
@@ -1618,20 +1488,16 @@ def match():
         # ----------------------------------------------------
 
         query_path = (
-            uploads_directory /
-            filename
+            uploads_directory
+            / filename
         )
 
         if query_path.exists():
-
             stem = query_path.stem
-
             suffix = query_path.suffix
-
             counter = 1
 
             while query_path.exists():
-
                 new_filename = (
                     f"{stem}_"
                     f"{counter}"
@@ -1639,8 +1505,8 @@ def match():
                 )
 
                 query_path = (
-                    uploads_directory /
-                    new_filename
+                    uploads_directory
+                    / new_filename
                 )
 
                 counter += 1
@@ -1654,13 +1520,10 @@ def match():
         )
 
         print()
-
         print("=" * 70)
-
         print(
             "JEWELMATCH AI - MATCH REQUEST"
         )
-
         print("=" * 70)
 
         print(
@@ -1680,9 +1543,6 @@ def match():
 
         # ----------------------------------------------------
         # RUN MATCHER
-        # ----------------------------------------------------
-        #
-        # IMPORTANT:
         #
         # matcher.py:
         #
@@ -1694,7 +1554,6 @@ def match():
         #
         # Therefore keyword arguments MUST be
         # used here.
-        #
         # ----------------------------------------------------
 
         results = match_jewellery(
@@ -1710,11 +1569,9 @@ def match():
         if isinstance(results, list):
 
             results = [
-
                 serialize_mongo_item(item)
                 if isinstance(item, dict)
                 else item
-
                 for item in results
             ]
 
@@ -1724,19 +1581,15 @@ def match():
                 results.get("results"),
                 list
             ):
-
                 results["results"] = [
-
                     serialize_mongo_item(item)
                     if isinstance(item, dict)
                     else item
-
                     for item in results["results"]
                 ]
 
             # Keep search mode available
             # to frontend.
-
             results["search_mode"] = (
                 search_mode
             )
@@ -1752,18 +1605,13 @@ def match():
         print("=" * 70)
 
         return jsonify({
-
             "success": True,
-
             "results": results,
-
             "search_mode":
                 search_mode,
-
         }), 200
 
     except Exception as exc:
-
         print(
             "Matching error:",
             repr(exc)
@@ -1774,29 +1622,20 @@ def match():
         traceback.print_exc()
 
         return jsonify({
-
             "success": False,
-
             "matched": False,
-
             "error": str(exc),
-
             "results": [],
-
         }), 500
 
     finally:
-
         # ----------------------------------------------------
         # REMOVE TEMPORARY QUERY IMAGE
         # ----------------------------------------------------
 
         if query_path:
-
             try:
-
                 if query_path.exists():
-
                     query_path.unlink()
 
                     print(
@@ -1805,7 +1644,6 @@ def match():
                     )
 
             except Exception as cleanup_exc:
-
                 print(
                     "Query image cleanup warning:",
                     repr(cleanup_exc)
@@ -1822,11 +1660,9 @@ def match():
         "path": ""
     }
 )
-
 @app.route(
     "/<path:path>"
 )
-
 def serve_frontend(path):
 
     # --------------------------------------------------------
@@ -1834,7 +1670,6 @@ def serve_frontend(path):
     # --------------------------------------------------------
 
     if path.startswith("api/"):
-
         return jsonify(
             {
                 "success": False,
@@ -1851,7 +1686,6 @@ def serve_frontend(path):
     if path.startswith(
         "catalogue-image/"
     ):
-
         return jsonify(
             {
                 "success": False,
@@ -1866,24 +1700,22 @@ def serve_frontend(path):
     # --------------------------------------------------------
 
     if not FRONTEND_DIST.exists():
-
         return jsonify(
             {
                 "success": True,
                 "message": (
-                    "JewelMatch AI backend "
-                    "is running."
+                    "JewelMatch AI frontend "
+                    "build was not found."
                 ),
             }
-        )
+        ), 500
 
     # --------------------------------------------------------
     # SERVE STATIC FILE
     # --------------------------------------------------------
 
     requested_file = (
-        FRONTEND_DIST /
-        path
+        FRONTEND_DIST / path
     )
 
     if (
@@ -1891,9 +1723,8 @@ def serve_frontend(path):
         and requested_file.exists()
         and requested_file.is_file()
     ):
-
         return send_from_directory(
-            FRONTEND_DIST,
+            str(FRONTEND_DIST),
             path
         )
 
@@ -1902,26 +1733,25 @@ def serve_frontend(path):
     # --------------------------------------------------------
 
     index_file = (
-        FRONTEND_DIST /
-        "index.html"
+        FRONTEND_DIST
+        / "index.html"
     )
 
     if index_file.exists():
-
         return send_from_directory(
-            FRONTEND_DIST,
+            str(FRONTEND_DIST),
             "index.html"
         )
 
     return jsonify(
         {
-            "success": True,
-            "message": (
-                "JewelMatch AI backend "
-                "is running."
+            "success": False,
+            "error": (
+                "React frontend index.html "
+                "was not found."
             ),
         }
-    )
+    ), 500
 
 
 # ============================================================
@@ -1930,7 +1760,6 @@ def serve_frontend(path):
 
 @app.errorhandler(413)
 def file_too_large(error):
-
     return jsonify(
         {
             "success": False,
@@ -1949,7 +1778,6 @@ def file_too_large(error):
 
 @app.errorhandler(404)
 def not_found(error):
-
     return jsonify(
         {
             "success": False,
@@ -1966,7 +1794,6 @@ def not_found(error):
 
 @app.errorhandler(405)
 def method_not_allowed(error):
-
     return jsonify(
         {
             "success": False,
@@ -1983,7 +1810,6 @@ def method_not_allowed(error):
 
 @app.errorhandler(Exception)
 def handle_general_error(error):
-
     print(
         "Unhandled application error:",
         repr(error)
@@ -2004,11 +1830,9 @@ def handle_general_error(error):
 if __name__ == "__main__":
 
     print("=" * 70)
-
     print(
         "JEWELMATCH AI BACKEND"
     )
-
     print("=" * 70)
 
     print(
@@ -2025,6 +1849,27 @@ if __name__ == "__main__":
 
     print(
         PROTOTYPE_DIR
+    )
+
+    print(
+        "Frontend directory:"
+    )
+
+    print(
+        FRONTEND_DIST
+    )
+
+    print(
+        "Frontend exists:",
+        FRONTEND_DIST.exists()
+    )
+
+    print(
+        "Index exists:",
+        (
+            FRONTEND_DIST
+            / "index.html"
+        ).exists()
     )
 
     print(
@@ -2049,7 +1894,6 @@ if __name__ == "__main__":
     # --------------------------------------------------------
 
     try:
-
         start_ai_worker()
 
         print(
@@ -2057,7 +1901,6 @@ if __name__ == "__main__":
         )
 
     except Exception as exc:
-
         print(
             "AI worker warning:",
             repr(exc)
