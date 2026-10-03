@@ -1,11 +1,9 @@
 import { useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 
 import Header from "../components/Header";
+import CameraModal from "../components/CameraModal";
 import { addJewellery } from "../services/api";
-
 import "../styles/add-jewellery.css";
-
 
 const JEWELLERY_TYPES = [
   "LP",
@@ -35,43 +33,25 @@ const JEWELLERY_TYPES = [
   "GCH",
 ];
 
-
 function AddJewelleryPage() {
-  const navigate = useNavigate();
-
   const fileInputRef = useRef(null);
-  const cameraInputRef = useRef(null);
 
-  const [selectedImage, setSelectedImage] =
-    useState(null);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState("");
 
-  const [previewUrl, setPreviewUrl] =
-    useState("");
+  const [name, setName] = useState("");
+  const [collection, setCollection] = useState("");
+  const [type, setType] = useState("");
+  const [description, setDescription] = useState("");
 
-  const [name, setName] =
-    useState("");
+  const [isDragging, setIsDragging] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [collection, setCollection] =
-    useState("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-  const [type, setType] =
-    useState("");
-
-  const [description, setDescription] =
-    useState("");
-
-  const [isDragging, setIsDragging] =
-    useState(false);
-
-  const [isSubmitting, setIsSubmitting] =
-    useState(false);
-
-  const [error, setError] =
-    useState("");
-
-  const [success, setSuccess] =
-    useState("");
-
+  // Existing Search-page camera modal
+  const [cameraOpen, setCameraOpen] = useState(false);
 
   /* ==========================================================
      IMAGE HANDLING
@@ -83,82 +63,98 @@ function AddJewelleryPage() {
     }
 
     if (!file.type.startsWith("image/")) {
-      setError(
-        "Please select a valid image file."
-      );
-
+      setError("Please select a valid image file.");
       return;
     }
 
     setError("");
-
     setSuccess("");
+
+    // Revoke previous preview URL
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
 
     setSelectedImage(file);
 
-    const objectUrl =
-      URL.createObjectURL(file);
-
+    const objectUrl = URL.createObjectURL(file);
     setPreviewUrl(objectUrl);
   }
 
-
   function handleFileChange(event) {
-    const file =
-      event.target.files?.[0];
-
-    handleImage(file);
-  }
-
-
-  function handleCameraChange(event) {
-    const file =
-      event.target.files?.[0];
+    const file = event.target.files?.[0];
 
     handleImage(file);
 
+    // Allow selecting the same file again
     event.target.value = "";
   }
 
+  /* ==========================================================
+     CAMERA
+     Uses the SAME CameraModal component as Search page
+  ========================================================== */
+
+  function openCamera() {
+    setError("");
+    setSuccess("");
+    setCameraOpen(true);
+  }
+
+  function closeCamera() {
+    setCameraOpen(false);
+  }
+
+  function handleCameraCapture(file) {
+    if (!file) {
+      return;
+    }
+
+    handleImage(file);
+    setCameraOpen(false);
+  }
+
+  /* ==========================================================
+     DRAG & DROP
+  ========================================================== */
 
   function handleDrop(event) {
     event.preventDefault();
-
     setIsDragging(false);
 
-    const file =
-      event.dataTransfer.files?.[0];
+    const file = event.dataTransfer.files?.[0];
 
     handleImage(file);
   }
 
-
   function handleDragOver(event) {
     event.preventDefault();
-
     setIsDragging(true);
   }
 
-
   function handleDragLeave(event) {
     event.preventDefault();
-
     setIsDragging(false);
   }
 
+  /* ==========================================================
+     REMOVE IMAGE
+  ========================================================== */
 
   function removeImage() {
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+
     setSelectedImage(null);
-
     setPreviewUrl("");
-
     setError("");
+    setSuccess("");
 
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
   }
-
 
   /* ==========================================================
      SUBMIT
@@ -168,129 +164,92 @@ function AddJewelleryPage() {
     event.preventDefault();
 
     setError("");
-
     setSuccess("");
 
-
     if (!selectedImage) {
-      setError(
-        "Please upload a jewellery image."
-      );
-
+      setError("Please upload a jewellery image.");
       return;
     }
-
 
     if (!name.trim()) {
-      setError(
-        "Please enter the jewellery name."
-      );
-
+      setError("Please enter the jewellery name.");
       return;
     }
-
 
     if (!collection) {
-      setError(
-        "Please select a collection."
-      );
-
+      setError("Please select a collection.");
       return;
     }
-
 
     if (!type) {
-      setError(
-        "Please select a jewellery type."
-      );
-
+      setError("Please select a jewellery type.");
       return;
     }
-
 
     try {
       setIsSubmitting(true);
 
-
-      const response =
-        await addJewellery({
-          image: selectedImage,
-          name: name.trim(),
-          collection,
-          type,
-          description:
-            description.trim(),
-        });
-
+      const response = await addJewellery({
+        image: selectedImage,
+        name: name.trim(),
+        collection,
+        type,
+        description: description.trim(),
+      });
 
       if (!response?.success) {
         throw new Error(
-          response?.message ||
-          "Unable to add jewellery."
+          response?.message || "Unable to add jewellery."
         );
       }
 
+      /*
+       * IMPORTANT:
+       * Stay on the Add Jewellery page after successful submission.
+       * Do NOT navigate to the Catalogue page.
+       */
 
       setSuccess(
-        "Jewellery added successfully. Search index has been updated."
+        response?.message ||
+          "Jewellery added successfully. AI processing will be completed automatically."
       );
 
+      // Clear form so another jewellery item can be added immediately.
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
 
       setSelectedImage(null);
-
       setPreviewUrl("");
-
       setName("");
-
       setCollection("");
-
       setType("");
-
       setDescription("");
-
 
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
-
-
-      setTimeout(() => {
-        navigate("/catalogue");
-      }, 1200);
-
     } catch (submitError) {
-
-      console.error(
-        "Add jewellery error:",
-        submitError
-      );
+      console.error("Add jewellery error:", submitError);
 
       setError(
-        submitError.message ||
-        "Unable to add jewellery."
+        submitError.message || "Unable to add jewellery."
       );
-
     } finally {
-
       setIsSubmitting(false);
     }
   }
 
-
   return (
     <div className="add-page">
-
       <Header />
 
-
       <main className="add-main">
-
         {/* =====================================================
             HERO
         ===================================================== */}
 
         <section className="add-hero">
-
           <div className="add-eyebrow">
             ✦ Catalogue management
           </div>
@@ -305,26 +264,20 @@ function AddJewelleryPage() {
             catalogue. Once processed, it can
             be used for visual matching.
           </p>
-
         </section>
-
 
         {/* =====================================================
             FORM
         ===================================================== */}
 
         <section className="add-form-card">
-
           <div className="add-form-grid">
-
             {/* =================================================
                 IMAGE
             ================================================= */}
 
             <div className="add-image-column">
-
               <div className="add-column-heading">
-
                 <span className="add-column-number">
                   01
                 </span>
@@ -338,9 +291,7 @@ function AddJewelleryPage() {
                     Upload or capture the design
                   </p>
                 </div>
-
               </div>
-
 
               <input
                 ref={fileInputRef}
@@ -350,30 +301,15 @@ function AddJewelleryPage() {
                 hidden
               />
 
-
-              <input
-                ref={cameraInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                onChange={handleCameraChange}
-                hidden
-              />
-
-
               {!selectedImage ? (
-
                 <div
                   className={`add-upload-box ${
-                    isDragging
-                      ? "dragging"
-                      : ""
+                    isDragging ? "dragging" : ""
                   }`}
                   onDrop={handleDrop}
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
                 >
-
                   <div className="add-upload-icon">
                     ↥
                   </div>
@@ -390,9 +326,7 @@ function AddJewelleryPage() {
                     or
                   </span>
 
-
                   <div className="add-upload-actions">
-
                     <button
                       type="button"
                       className="add-secondary-button"
@@ -403,42 +337,29 @@ function AddJewelleryPage() {
                       Choose Image
                     </button>
 
-
                     <button
                       type="button"
                       className="add-secondary-button"
-                      onClick={() =>
-                        cameraInputRef.current?.click()
-                      }
+                      onClick={openCamera}
                     >
                       Take Photo
                     </button>
-
                   </div>
-
 
                   <small>
                     JPG, PNG, WEBP or BMP
                   </small>
-
                 </div>
-
               ) : (
-
                 <div className="add-preview-box">
-
                   <div className="add-preview-frame">
-
                     <img
                       src={previewUrl}
                       alt="Jewellery preview"
                     />
-
                   </div>
 
-
                   <div className="add-preview-info">
-
                     <span>
                       {selectedImage.name}
                     </span>
@@ -449,9 +370,7 @@ function AddJewelleryPage() {
                     >
                       Remove
                     </button>
-
                   </div>
-
 
                   <button
                     type="button"
@@ -462,14 +381,10 @@ function AddJewelleryPage() {
                   >
                     Change Image
                   </button>
-
                 </div>
-
               )}
 
-
               <div className="add-image-note">
-
                 <span>
                   ✦
                 </span>
@@ -478,20 +393,15 @@ function AddJewelleryPage() {
                   Use a clear image where the
                   jewellery design is visible.
                 </p>
-
               </div>
-
             </div>
-
 
             {/* =================================================
                 DETAILS
             ================================================= */}
 
             <div className="add-details-column">
-
               <div className="add-column-heading">
-
                 <span className="add-column-number">
                   02
                 </span>
@@ -505,19 +415,15 @@ function AddJewelleryPage() {
                     Add the catalogue information
                   </p>
                 </div>
-
               </div>
-
 
               <form
                 className="add-details-form"
                 onSubmit={handleSubmit}
               >
-
                 {/* NAME */}
 
                 <div className="add-form-group">
-
                   <label htmlFor="jewellery-name">
                     Jewellery Name
                   </label>
@@ -531,14 +437,11 @@ function AddJewelleryPage() {
                     }
                     placeholder="e.g. Classic Gold Ring"
                   />
-
                 </div>
-
 
                 {/* COLLECTION */}
 
                 <div className="add-form-group">
-
                   <label htmlFor="collection">
                     Collection
                   </label>
@@ -552,7 +455,6 @@ function AddJewelleryPage() {
                       )
                     }
                   >
-
                     <option value="">
                       Select collection
                     </option>
@@ -564,16 +466,12 @@ function AddJewelleryPage() {
                     <option value="Prototype">
                       Prototype
                     </option>
-
                   </select>
-
                 </div>
-
 
                 {/* JEWELLERY TYPE */}
 
                 <div className="add-form-group">
-
                   <label htmlFor="jewellery-type">
                     Jewellery Type
                   </label>
@@ -587,7 +485,6 @@ function AddJewelleryPage() {
                       )
                     }
                   >
-
                     <option value="">
                       Select jewellery type
                     </option>
@@ -602,16 +499,12 @@ function AddJewelleryPage() {
                         </option>
                       )
                     )}
-
                   </select>
-
                 </div>
-
 
                 {/* DESCRIPTION */}
 
                 <div className="add-form-group">
-
                   <label htmlFor="description">
                     Description
                   </label>
@@ -627,9 +520,7 @@ function AddJewelleryPage() {
                     placeholder="Add a short description of the jewellery design"
                     rows={5}
                   />
-
                 </div>
-
 
                 {/* ERROR */}
 
@@ -639,7 +530,6 @@ function AddJewelleryPage() {
                   </div>
                 )}
 
-
                 {/* SUCCESS */}
 
                 {success && (
@@ -648,7 +538,6 @@ function AddJewelleryPage() {
                   </div>
                 )}
 
-
                 {/* SUBMIT */}
 
                 <button
@@ -656,7 +545,6 @@ function AddJewelleryPage() {
                   className="add-submit-button"
                   disabled={isSubmitting}
                 >
-
                   <span>
                     ✦
                   </span>
@@ -670,26 +558,18 @@ function AddJewelleryPage() {
                   <strong>
                     →
                   </strong>
-
                 </button>
-
               </form>
-
             </div>
-
           </div>
-
         </section>
-
 
         {/* =====================================================
             PROCESS
         ===================================================== */}
 
         <section className="add-process-section">
-
           <div className="add-process-heading">
-
             <span>
               Simple & fast
             </span>
@@ -697,16 +577,11 @@ function AddJewelleryPage() {
             <h2>
               From image to catalogue
             </h2>
-
           </div>
 
-
           <div className="add-process-grid">
-
             <div className="add-process-card">
-
               <div className="add-process-top">
-
                 <span>
                   ↑
                 </span>
@@ -714,7 +589,6 @@ function AddJewelleryPage() {
                 <strong>
                   01
                 </strong>
-
               </div>
 
               <h3>
@@ -725,14 +599,10 @@ function AddJewelleryPage() {
                 Add a clear image of the
                 jewellery design.
               </p>
-
             </div>
 
-
             <div className="add-process-card">
-
               <div className="add-process-top">
-
                 <span>
                   ✦
                 </span>
@@ -740,7 +610,6 @@ function AddJewelleryPage() {
                 <strong>
                   02
                 </strong>
-
               </div>
 
               <h3>
@@ -751,14 +620,10 @@ function AddJewelleryPage() {
                 Provide the basic catalogue
                 information for the design.
               </p>
-
             </div>
 
-
             <div className="add-process-card">
-
               <div className="add-process-top">
-
                 <span>
                   ✓
                 </span>
@@ -766,7 +631,6 @@ function AddJewelleryPage() {
                 <strong>
                   03
                 </strong>
-
               </div>
 
               <h3>
@@ -777,24 +641,17 @@ function AddJewelleryPage() {
                 The jewellery is indexed and
                 prepared for visual matching.
               </p>
-
             </div>
-
           </div>
-
         </section>
-
       </main>
-
 
       {/* =======================================================
           FOOTER
       ======================================================= */}
 
       <footer className="add-footer">
-
         <div>
-
           <strong>
             JewelMatch AI
           </strong>
@@ -802,18 +659,26 @@ function AddJewelleryPage() {
           <span>
             Visual Jewellery Search
           </span>
-
         </div>
 
         <div>
           © 2026 JewelMatch AI
         </div>
-
       </footer>
 
+      {/* =======================================================
+          EXISTING SEARCH CAMERA MODAL
+          Do not create a new camera component.
+      ======================================================= */}
+
+      {cameraOpen && (
+        <CameraModal
+          onClose={closeCamera}
+          onCapture={handleCameraCapture}
+        />
+      )}
     </div>
   );
 }
-
 
 export default AddJewelleryPage;

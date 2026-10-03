@@ -35,82 +35,122 @@ function SearchPage() {
 
 
   async function handleMatch() {
-
     if (!selectedImage) {
-
       setError(
         "Please upload or capture a jewellery image first."
       );
-
       return;
     }
 
-
     setError("");
-
     setResults([]);
-
     setBestSimilarity(null);
-
     setIsLoading(true);
 
-
     try {
+      const data = await matchJewellery(
+        selectedImage,
+        searchMode,
+        8
+      );
 
-      const data =
-        await matchJewellery(
-          selectedImage,
-          searchMode,
-          8
-        );
+      console.log(
+        "MATCH API RESPONSE:",
+        data
+      );
 
+      /*
+        Backend response is expected to look like:
+
+        {
+          success: true,
+          results: {
+            success: true,
+            matched: true,
+            results: [
+              ...
+            ]
+          }
+        }
+      */
+
+      const matchData =
+        data?.results || {};
+
+      /*
+        IMPORTANT:
+        The actual jewellery result array is
+        inside data.results.results
+      */
 
       const matchedResults =
-        data?.results ||
-        data?.matches ||
-        [];
+        Array.isArray(matchData?.results)
+          ? matchData.results
+          : Array.isArray(matchData?.matches)
+            ? matchData.matches
+            : Array.isArray(data?.matches)
+              ? data.matches
+              : Array.isArray(data?.results)
+                ? data.results
+                : [];
 
+      console.log(
+        "MATCHED RESULTS:",
+        matchedResults
+      );
 
       setResults(
         matchedResults
       );
 
 
+      /*
+        Get best similarity
+      */
+
       if (
+        matchData?.best_similarity !==
+        undefined
+      ) {
+        setBestSimilarity(
+          matchData.best_similarity
+        );
+      } else if (
         data?.best_similarity !==
         undefined
       ) {
-
         setBestSimilarity(
           data.best_similarity
         );
-
       } else if (
-        matchedResults.length
+        matchedResults.length > 0
       ) {
-
         const first =
           matchedResults[0];
-
 
         setBestSimilarity(
           first?.similarity ??
           first?.score ??
+          first?.final_score ??
           null
         );
       }
 
 
-      if (!matchedResults.length) {
+      /*
+        Show error only when there
+        are genuinely no results.
+      */
 
+      if (
+        matchedResults.length === 0
+      ) {
         setError(
           "No similar jewellery was found."
         );
-
       }
 
     } catch (matchError) {
-
       console.error(
         "Matching error:",
         matchError
@@ -122,7 +162,6 @@ function SearchPage() {
       );
 
     } finally {
-
       setIsLoading(false);
     }
   }
@@ -147,9 +186,9 @@ function SearchPage() {
           </div>
 
           <h1>
-            Find the{" "}
+            Find{" "}
             <span>
-              perfect match.
+              the perfect match.
             </span>
           </h1>
 
@@ -167,6 +206,7 @@ function SearchPage() {
         ===================================================== */}
 
         <section className="search-workspace">
+
 
           {/* ===================================================
               STEP 01
@@ -282,9 +322,11 @@ function SearchPage() {
           =================================================== */}
 
           {error && (
+
             <div className="search-error">
               {error}
             </div>
+
           )}
 
         </section>
@@ -319,10 +361,12 @@ function SearchPage() {
         ===================================================== */}
 
         {!isLoading && (
+
           <SearchResults
             results={results}
             bestSimilarity={bestSimilarity}
           />
+
         )}
 
 
@@ -333,81 +377,83 @@ function SearchPage() {
         {!results.length &&
           !isLoading && (
 
-          <section className="search-how">
+            <section className="search-how">
 
-            <div className="search-how-heading">
+              <div className="search-how-heading">
 
-              <span>
-                How it works
-              </span>
+                <span>
+                  How it works
+                </span>
 
-              <h2>
-                Image → AI → Match
-              </h2>
-
-            </div>
-
-
-            <div className="search-how-grid">
-
-              <div className="how-card">
-
-                <strong>
-                  01
-                </strong>
-
-                <h3>
-                  Upload
-                </h3>
-
-                <p>
-                  Add a jewellery image from
-                  your device or camera.
-                </p>
+                <h2>
+                  Image → AI → Match
+                </h2>
 
               </div>
 
 
-              <div className="how-card">
+              <div className="search-how-grid">
 
-                <strong>
-                  02
-                </strong>
 
-                <h3>
-                  Analyse
-                </h3>
+                <div className="how-card">
 
-                <p>
-                  AI extracts visual design
-                  characteristics from the image.
-                </p>
+                  <strong>
+                    01
+                  </strong>
+
+                  <h3>
+                    Upload
+                  </h3>
+
+                  <p>
+                    Add a jewellery image from
+                    your device or camera.
+                  </p>
+
+                </div>
+
+
+                <div className="how-card">
+
+                  <strong>
+                    02
+                  </strong>
+
+                  <h3>
+                    Analyse
+                  </h3>
+
+                  <p>
+                    AI extracts visual design
+                    characteristics from the image.
+                  </p>
+
+                </div>
+
+
+                <div className="how-card">
+
+                  <strong>
+                    03
+                  </strong>
+
+                  <h3>
+                    Discover
+                  </h3>
+
+                  <p>
+                    Find visually similar jewellery
+                    from the selected collection.
+                  </p>
+
+                </div>
+
 
               </div>
 
+            </section>
 
-              <div className="how-card">
-
-                <strong>
-                  03
-                </strong>
-
-                <h3>
-                  Discover
-                </h3>
-
-                <p>
-                  Find visually similar jewellery
-                  from the selected collection.
-                </p>
-
-              </div>
-
-            </div>
-
-          </section>
-
-        )}
+          )}
 
       </main>
 

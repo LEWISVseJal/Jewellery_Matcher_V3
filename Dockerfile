@@ -1,54 +1,116 @@
-FROM python:3.11-slim
+# ============================================================
+# JEWELMATCH AI - DOCKERFILE
+# ============================================================
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PYTHONHASHSEED=0 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    OMP_NUM_THREADS=1 \
-    MKL_NUM_THREADS=1 \
-    OPENBLAS_NUM_THREADS=1 \
-    NUMEXPR_NUM_THREADS=1 \
-    VECLIB_MAXIMUM_THREADS=1 \
-    BLIS_NUM_THREADS=1 \
-    TOKENIZERS_PARALLELISM=false \
-    HF_HOME=/app/model_cache/huggingface \
-    HF_HUB_CACHE=/app/model_cache/huggingface/hub \
-    HF_HUB_DISABLE_TELEMETRY=1
+# ============================================================
+# STAGE 1 - BUILD REACT FRONTEND
+# ============================================================
+
+FROM node:20-alpine AS frontend-builder
+
+WORKDIR /app/frontend/react
+
+# Copy package files first for Docker layer caching
+COPY frontend/react/package*.json ./
+
+RUN npm install
+
+# Copy React source
+COPY frontend/react/ ./
+
+# Build production frontend
+RUN npm run build
+
+
+# ============================================================
+# STAGE 2 - PYTHON BACKEND
+# ============================================================
+
+FROM python:3.11-slim
 
 WORKDIR /app
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        libglib2.0-0 \
-        libgl1 \
-        libsm6 \
-        libxext6 \
-        libxrender1 \
-        libgomp1 \
-        curl \
+
+# ============================================================
+# SYSTEM DEPENDENCIES
+# ============================================================
+
+RUN apt-get update && apt-get install -y \
+    curl \
+    libglib2.0-0 \
+    libgl1 \
+    libsm6 \
+    libxext6 \
+    libxrender1 \
     && rm -rf /var/lib/apt/lists/*
 
-COPY backend/requirements.txt /app/backend/requirements.txt
 
-RUN python -m pip install --upgrade pip \
-    && pip install --no-cache-dir \
-        torch==2.6.0 \
-        torchvision==0.21.0 \
-        --index-url https://download.pytorch.org/whl/cpu \
-    && pip install --no-cache-dir \
-        -r /app/backend/requirements.txt
+# ============================================================
+# PYTHON ENVIRONMENT
+# ============================================================
 
-COPY backend /app/backend
-COPY frontend /app/frontend
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+
+# ============================================================
+# PYTHON DEPENDENCIES
+# ============================================================
+
+COPY backend/requirements.txt ./backend/requirements.txt
+
+RUN pip install --no-cache-dir \
+    --upgrade pip
+
+# Install CPU version of PyTorch
+RUN pip install --no-cache-dir \
+    torch \
+    --index-url https://download.pytorch.org/whl/cpu
+
+# Install project dependencies
+RUN pip install --no-cache-dir \
+    -r backend/requirements.txt
+
+
+# ============================================================
+# COPY PROJECT
+# ============================================================
+
+COPY backend ./backend
+
+# Copy production React build
+COPY --from=frontend-builder \
+    /app/frontend/react/dist \
+    ./frontend/react/dist
+
+
+# ============================================================
+# CREATE REQUIRED DIRECTORIES
+# ============================================================
 
 RUN mkdir -p \
-    /app/backend/uploads \
-    /app/backend/database \
-    /app/backend/catalogue/gold \
-    /app/backend/catalogue/prototype \
-    /app/model_cache/huggingface
+    backend/database/uploads \
+    backend/database \
+    backend/catalogue/gold \
+    backend/catalogue/prototype
+
+
+# ============================================================
+# RENDER PORT
+# ============================================================
+
+ENV PORT=10000
 
 EXPOSE 10000
 
-CMD ["sh", "-c", "gunicorn --workers 1 --threads 2 --timeout 180 --bind 0.0.0.0:${PORT:-10000} backend.app:app"]
+
+# ============================================================
+# START APPLICATION
+# ============================================================
+
+CMD gunicorn \
+    --bind 0.0.0.0:${PORT} \
+    --workers 1 \
+    --threads 2 \
+    --timeout 300 \
+    backend.app:app

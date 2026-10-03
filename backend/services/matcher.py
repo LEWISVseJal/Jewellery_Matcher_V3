@@ -44,6 +44,10 @@ import numpy as np
 
 from sklearn.metrics.pairwise import cosine_similarity
 
+from backend.database.mongodb import (
+    get_jewellery_collection,
+)
+
 from .embedding import (
     MODEL_NAME,
     create_embedding,
@@ -65,8 +69,6 @@ GOLD_DIR = CATALOGUE_DIR / "gold"
 PROTOTYPE_DIR = CATALOGUE_DIR / "prototype"
 
 INDEX_PATH = DATABASE_DIR / "dino_index.npz"
-
-JEWELLERY_JSON = DATABASE_DIR / "jewellery.json"
 
 
 # ============================================================
@@ -325,51 +327,47 @@ def resolve_image_path(
 
 def load_catalogue() -> list:
     """
-    Load jewellery catalogue.
-    """
+    Load the live jewellery catalogue from MongoDB.
 
-    if not JEWELLERY_JSON.exists():
-        return []
+    MongoDB is the single source of truth for catalogue metadata
+    and AI status.
+
+    The DINO index remains stored locally in:
+        backend/database/dino_index.npz
+    """
 
     try:
 
-        with open(
-            JEWELLERY_JSON,
-            "r",
-            encoding="utf-8",
-        ) as file:
+        collection = (
+            get_jewellery_collection()
+        )
 
-            data = json.load(file)
+        documents = (
+            collection
+            .find(
+                {},
+                {
+                    "_id": 0
+                }
+            )
+        )
+
+        return list(
+            documents
+        )
 
     except Exception as exc:
 
         print(
-            "[MATCHER] Could not load catalogue:",
+            "[MATCHER] "
+            "Could not load catalogue "
+            "from MongoDB:",
             exc,
         )
 
+        traceback.print_exc()
+
         return []
-
-    if isinstance(data, list):
-        return data
-
-    if isinstance(data, dict):
-
-        for key in [
-            "jewellery",
-            "items",
-            "catalogue",
-            "data",
-        ]:
-
-            if isinstance(
-                data.get(key),
-                list,
-            ):
-
-                return data[key]
-
-    return []
 
 
 # ============================================================
@@ -457,7 +455,9 @@ def load_index() -> dict:
 
     if not INDEX_PATH.exists():
 
-        raise FileNotFoundError(f"DINO index not found: {INDEX_PATH}")
+        raise FileNotFoundError(
+            f"DINO index not found: {INDEX_PATH}"
+        )
 
     data = np.load(
         INDEX_PATH,
@@ -477,7 +477,10 @@ def load_index() -> dict:
 
     if embeddings.ndim != 2:
 
-        raise ValueError("Invalid DINO index: " "embeddings must be 2-dimensional.")
+        raise ValueError(
+            "Invalid DINO index: "
+            "embeddings must be 2-dimensional."
+        )
 
     if embeddings.shape[1] != EMBEDDING_DIMENSION:
 
@@ -490,19 +493,22 @@ def load_index() -> dict:
     if len(ids) != len(embeddings):
 
         raise ValueError(
-            "DINO index mismatch: " "ids and embeddings have different lengths."
+            "DINO index mismatch: "
+            "ids and embeddings have different lengths."
         )
 
     if len(collections) != len(embeddings):
 
         raise ValueError(
-            "DINO index mismatch: " "collections and embeddings have different lengths."
+            "DINO index mismatch: "
+            "collections and embeddings have different lengths."
         )
 
     if len(image_paths) != len(embeddings):
 
         raise ValueError(
-            "DINO index mismatch: " "image_paths and embeddings have different lengths."
+            "DINO index mismatch: "
+            "image_paths and embeddings have different lengths."
         )
 
     entries = []
@@ -512,8 +518,12 @@ def load_index() -> dict:
         entries.append(
             {
                 "id": str(ids[index]),
-                "collection": normalize_collection(collections[index]),
-                "image_path": str(image_paths[index]),
+                "collection": normalize_collection(
+                    collections[index]
+                ),
+                "image_path": str(
+                    image_paths[index]
+                ),
             }
         )
 
@@ -522,7 +532,9 @@ def load_index() -> dict:
     if "version" in data.files:
 
         try:
-            version = int(data["version"].item())
+            version = int(
+                data["version"].item()
+            )
         except Exception:
             pass
 
@@ -531,7 +543,9 @@ def load_index() -> dict:
     if "embedding_model" in data.files:
 
         try:
-            embedding_model = str(data["embedding_model"].item())
+            embedding_model = str(
+                data["embedding_model"].item()
+            )
         except Exception:
             pass
 
@@ -540,7 +554,9 @@ def load_index() -> dict:
     if "embedding_dimension" in data.files:
 
         try:
-            embedding_dimension = int(data["embedding_dimension"].item())
+            embedding_dimension = int(
+                data["embedding_dimension"].item()
+            )
         except Exception:
             pass
 
@@ -573,13 +589,21 @@ def _normalize_embedding(
         dtype=np.float32,
     ).reshape(-1)
 
-    norm = np.linalg.norm(embedding)
+    norm = np.linalg.norm(
+        embedding
+    )
 
     if norm <= 1e-12:
 
-        raise ValueError("Embedding norm is zero.")
+        raise ValueError(
+            "Embedding norm is zero."
+        )
 
-    return (embedding / norm).astype(np.float32)
+    return (
+        embedding / norm
+    ).astype(
+        np.float32
+    )
 
 
 # ============================================================
@@ -595,7 +619,9 @@ def _dino_similarity(
     Calculate cosine similarity.
     """
 
-    query = _normalize_embedding(query_embedding).reshape(
+    query = _normalize_embedding(
+        query_embedding
+    ).reshape(
         1,
         -1,
     )
@@ -616,14 +642,18 @@ def _dino_similarity(
         1e-12,
     )
 
-    candidates = candidates / norms
+    candidates = (
+        candidates / norms
+    )
 
     scores = np.dot(
         candidates,
         query.T,
     ).reshape(-1)
 
-    return scores.astype(np.float32)
+    return scores.astype(
+        np.float32
+    )
 
 
 # ============================================================
@@ -720,11 +750,15 @@ def _get_foreground_image(
     create_foreground_crop() from embedding.py.
     """
 
-    image = _load_image(image_path)
+    image = _load_image(
+        image_path
+    )
 
     if image is None:
 
-        raise ValueError(f"Could not load image: {image_path}")
+        raise ValueError(
+            f"Could not load image: {image_path}"
+        )
 
     image = _resize_keep_aspect(
         image,
@@ -805,10 +839,15 @@ def _get_foreground_image(
             )
 
             foreground_mask = np.where(
-                ((mask == cv2.GC_FGD) | (mask == cv2.GC_PR_FGD)),
+                (
+                    (mask == cv2.GC_FGD)
+                    | (mask == cv2.GC_PR_FGD)
+                ),
                 255,
                 0,
-            ).astype(np.uint8)
+            ).astype(
+                np.uint8
+            )
 
             kernel = np.ones(
                 (
@@ -832,28 +871,42 @@ def _get_foreground_image(
                 iterations=1,
             )
 
-            ys, xs = np.where(foreground_mask > 0)
+            ys, xs = np.where(
+                foreground_mask > 0
+            )
 
             if len(xs) > 100 and len(ys) > 100:
 
                 x1 = max(
                     0,
-                    int(xs.min() - width * 0.03),
+                    int(
+                        xs.min()
+                        - width * 0.03
+                    ),
                 )
 
                 y1 = max(
                     0,
-                    int(ys.min() - height * 0.03),
+                    int(
+                        ys.min()
+                        - height * 0.03
+                    ),
                 )
 
                 x2 = min(
                     width,
-                    int(xs.max() + width * 0.03),
+                    int(
+                        xs.max()
+                        + width * 0.03
+                    ),
                 )
 
                 y2 = min(
                     height,
-                    int(ys.max() + height * 0.03),
+                    int(
+                        ys.max()
+                        + height * 0.03
+                    ),
                 )
 
                 cropped = image[
@@ -861,7 +914,10 @@ def _get_foreground_image(
                     x1:x2,
                 ]
 
-                if cropped is not None and cropped.size > 0:
+                if (
+                    cropped is not None
+                    and cropped.size > 0
+                ):
 
                     return cropped
 
@@ -922,7 +978,9 @@ def _normalized_gray(
     Apply CLAHE to grayscale image.
     """
 
-    gray = _gray(image)
+    gray = _gray(
+        image
+    )
 
     if gray.size == 0:
         return gray
@@ -935,7 +993,9 @@ def _normalized_gray(
         ),
     )
 
-    return clahe.apply(gray)
+    return clahe.apply(
+        gray
+    )
 
 
 # ============================================================
@@ -1005,7 +1065,10 @@ def _histogram_similarity(
     Compare grayscale histograms.
     """
 
-    if image_a.size == 0 or image_b.size == 0:
+    if (
+        image_a.size == 0
+        or image_b.size == 0
+    ):
 
         return 0.0
 
@@ -1057,7 +1120,10 @@ def _histogram_similarity(
         cv2.HISTCMP_CORREL,
     )
 
-    score = (float(correlation) + 1.0) / 2.0
+    score = (
+        float(correlation)
+        + 1.0
+    ) / 2.0
 
     return float(
         np.clip(
@@ -1081,17 +1147,28 @@ def _shape_similarity(
     Compare broad jewellery silhouette.
     """
 
-    gray_a = _normalized_gray(image_a)
+    gray_a = _normalized_gray(
+        image_a
+    )
 
-    gray_b = _normalized_gray(image_b)
+    gray_b = _normalized_gray(
+        image_b
+    )
 
-    if gray_a.size == 0 or gray_b.size == 0:
+    if (
+        gray_a.size == 0
+        or gray_b.size == 0
+    ):
 
         return 0.0
 
-    edges_a = _edge_map(gray_a)
+    edges_a = _edge_map(
+        gray_a
+    )
 
-    edges_b = _edge_map(gray_b)
+    edges_b = _edge_map(
+        gray_b
+    )
 
     contours_a, _ = cv2.findContours(
         edges_a,
@@ -1105,7 +1182,10 @@ def _shape_similarity(
         cv2.CHAIN_APPROX_SIMPLE,
     )
 
-    if not contours_a or not contours_b:
+    if (
+        not contours_a
+        or not contours_b
+    ):
 
         return (
             _histogram_similarity(
@@ -1125,29 +1205,73 @@ def _shape_similarity(
         key=cv2.contourArea,
     )
 
-    area_a = cv2.contourArea(contour_a)
+    area_a = cv2.contourArea(
+        contour_a
+    )
 
-    area_b = cv2.contourArea(contour_b)
+    area_b = cv2.contourArea(
+        contour_b
+    )
 
-    if area_a <= 1 or area_b <= 1:
+    if (
+        area_a <= 1
+        or area_b <= 1
+    ):
 
         return 0.0
 
-    moments_a = cv2.HuMoments(cv2.moments(contour_a)).flatten()
+    moments_a = cv2.HuMoments(
+        cv2.moments(
+            contour_a
+        )
+    ).flatten()
 
-    moments_b = cv2.HuMoments(cv2.moments(contour_b)).flatten()
+    moments_b = cv2.HuMoments(
+        cv2.moments(
+            contour_b
+        )
+    ).flatten()
 
-    moments_a = -np.sign(moments_a) * np.log10(np.abs(moments_a) + 1e-12)
+    moments_a = (
+        -np.sign(moments_a)
+        * np.log10(
+            np.abs(moments_a)
+            + 1e-12
+        )
+    )
 
-    moments_b = -np.sign(moments_b) * np.log10(np.abs(moments_b) + 1e-12)
+    moments_b = (
+        -np.sign(moments_b)
+        * np.log10(
+            np.abs(moments_b)
+            + 1e-12
+        )
+    )
 
-    distance = float(np.mean(np.abs(moments_a - moments_b)))
+    distance = float(
+        np.mean(
+            np.abs(
+                moments_a
+                - moments_b
+            )
+        )
+    )
 
-    moment_score = 1.0 / (1.0 + distance)
+    moment_score = 1.0 / (
+        1.0 + distance
+    )
 
-    _, _, width_a, height_a = cv2.boundingRect(contour_a)
+    _, _, width_a, height_a = (
+        cv2.boundingRect(
+            contour_a
+        )
+    )
 
-    _, _, width_b, height_b = cv2.boundingRect(contour_b)
+    _, _, width_b, height_b = (
+        cv2.boundingRect(
+            contour_b
+        )
+    )
 
     ratio_a = width_a / max(
         height_a,
@@ -1159,11 +1283,18 @@ def _shape_similarity(
         1,
     )
 
-    ratio_difference = abs(ratio_a - ratio_b)
+    ratio_difference = abs(
+        ratio_a - ratio_b
+    )
 
-    aspect_score = 1.0 / (1.0 + ratio_difference)
+    aspect_score = 1.0 / (
+        1.0 + ratio_difference
+    )
 
-    final_score = 0.75 * moment_score + 0.25 * aspect_score
+    final_score = (
+        0.75 * moment_score
+        + 0.25 * aspect_score
+    )
 
     return float(
         np.clip(
@@ -1189,11 +1320,18 @@ def _structure_similarity(
     Colour/material is intentionally ignored.
     """
 
-    gray_a = _normalized_gray(image_a)
+    gray_a = _normalized_gray(
+        image_a
+    )
 
-    gray_b = _normalized_gray(image_b)
+    gray_b = _normalized_gray(
+        image_b
+    )
 
-    if gray_a.size == 0 or gray_b.size == 0:
+    if (
+        gray_a.size == 0
+        or gray_b.size == 0
+    ):
 
         return 0.0
 
@@ -1214,17 +1352,34 @@ def _structure_similarity(
         interpolation=cv2.INTER_AREA,
     )
 
-    edges_a = _edge_map(gray_a)
+    edges_a = _edge_map(
+        gray_a
+    )
 
-    edges_b = _edge_map(gray_b)
+    edges_b = _edge_map(
+        gray_b
+    )
 
-    if edges_a.size == 0 or edges_b.size == 0:
+    if (
+        edges_a.size == 0
+        or edges_b.size == 0
+    ):
 
         return 0.0
 
-    a = edges_a.astype(np.float32) / 255.0
+    a = (
+        edges_a.astype(
+            np.float32
+        )
+        / 255.0
+    )
 
-    b = edges_b.astype(np.float32) / 255.0
+    b = (
+        edges_b.astype(
+            np.float32
+        )
+        / 255.0
+    )
 
     a_flat = a.reshape(
         1,
@@ -1239,9 +1394,7 @@ def _structure_similarity(
     cosine = cosine_similarity(
         a_flat,
         b_flat,
-    )[
-        0
-    ][0]
+    )[0][0]
 
     cosine = float(
         np.clip(
@@ -1269,16 +1422,32 @@ def _structure_similarity(
         interpolation=cv2.INTER_AREA,
     )
 
-    mse = float(np.mean((small_a - small_b) ** 2))
-
-    mse_score = 1.0 / (1.0 + 8.0 * mse)
-
-    histogram_score = _histogram_similarity(
-        gray_a,
-        gray_b,
+    mse = float(
+        np.mean(
+            (
+                small_a
+                - small_b
+            )
+            ** 2
+        )
     )
 
-    score = 0.55 * cosine + 0.30 * mse_score + 0.15 * histogram_score
+    mse_score = 1.0 / (
+        1.0 + 8.0 * mse
+    )
+
+    histogram_score = (
+        _histogram_similarity(
+            gray_a,
+            gray_b,
+        )
+    )
+
+    score = (
+        0.55 * cosine
+        + 0.30 * mse_score
+        + 0.15 * histogram_score
+    )
 
     return float(
         np.clip(
@@ -1305,11 +1474,18 @@ def _local_similarity(
     lighting differences can strongly affect it.
     """
 
-    gray_a = _normalized_gray(image_a)
+    gray_a = _normalized_gray(
+        image_a
+    )
 
-    gray_b = _normalized_gray(image_b)
+    gray_b = _normalized_gray(
+        image_b
+    )
 
-    if gray_a.size == 0 or gray_b.size == 0:
+    if (
+        gray_a.size == 0
+        or gray_b.size == 0
+    ):
 
         return 0.0
 
@@ -1337,14 +1513,18 @@ def _local_similarity(
             nfeatures=1200,
         )
 
-        keypoints_a, descriptors_a = sift.detectAndCompute(
-            gray_a,
-            None,
+        keypoints_a, descriptors_a = (
+            sift.detectAndCompute(
+                gray_a,
+                None,
+            )
         )
 
-        keypoints_b, descriptors_b = sift.detectAndCompute(
-            gray_b,
-            None,
+        keypoints_b, descriptors_b = (
+            sift.detectAndCompute(
+                gray_b,
+                None,
+            )
         )
 
     except Exception as exc:
@@ -1356,11 +1536,17 @@ def _local_similarity(
 
         return 0.0
 
-    if descriptors_a is None or descriptors_b is None:
+    if (
+        descriptors_a is None
+        or descriptors_b is None
+    ):
 
         return 0.0
 
-    if len(keypoints_a) < 2 or len(keypoints_b) < 2:
+    if (
+        len(keypoints_a) < 2
+        or len(keypoints_b) < 2
+    ):
 
         return 0.0
 
@@ -1390,14 +1576,21 @@ def _local_similarity(
 
         first, second = pair
 
-        if first.distance < 0.75 * second.distance:
+        if (
+            first.distance
+            < 0.75 * second.distance
+        ):
 
-            good_matches.append(first)
+            good_matches.append(
+                first
+            )
 
     if not good_matches:
         return 0.0
 
-    ratio = len(good_matches) / max(
+    ratio = len(
+        good_matches
+    ) / max(
         min(
             len(keypoints_a),
             len(keypoints_b),
@@ -1418,7 +1611,12 @@ def _local_similarity(
     if len(good_matches) >= 4:
 
         source_points = np.float32(
-            [keypoints_a[match.queryIdx].pt for match in good_matches]
+            [
+                keypoints_a[
+                    match.queryIdx
+                ].pt
+                for match in good_matches
+            ]
         ).reshape(
             -1,
             1,
@@ -1426,7 +1624,12 @@ def _local_similarity(
         )
 
         destination_points = np.float32(
-            [keypoints_b[match.trainIdx].pt for match in good_matches]
+            [
+                keypoints_b[
+                    match.trainIdx
+                ].pt
+                for match in good_matches
+            ]
         ).reshape(
             -1,
             1,
@@ -1444,11 +1647,16 @@ def _local_similarity(
 
             if mask is not None:
 
-                inliers = int(mask.ravel().sum())
+                inliers = int(
+                    mask.ravel().sum()
+                )
 
-                homography_ratio = inliers / max(
-                    len(good_matches),
-                    1,
+                homography_ratio = (
+                    inliers
+                    / max(
+                        len(good_matches),
+                        1,
+                    )
                 )
 
                 homography_score = float(
@@ -1463,7 +1671,10 @@ def _local_similarity(
 
             homography_score = 0.0
 
-    score = 0.55 * ratio_score + 0.45 * homography_score
+    score = (
+        0.55 * ratio_score
+        + 0.45 * homography_score
+    )
 
     return float(
         np.clip(
@@ -1487,11 +1698,18 @@ def verify_design(
     Run shape, structure and local verification.
     """
 
-    query_image = _load_image(query_path)
+    query_image = _load_image(
+        query_path
+    )
 
-    candidate_image = _load_image(candidate_path)
+    candidate_image = _load_image(
+        candidate_path
+    )
 
-    if query_image is None or candidate_image is None:
+    if (
+        query_image is None
+        or candidate_image is None
+    ):
 
         return {
             "shape": 0.0,
@@ -1502,7 +1720,11 @@ def verify_design(
 
     try:
 
-        query_foreground = _get_foreground_image(query_path)
+        query_foreground = (
+            _get_foreground_image(
+                query_path
+            )
+        )
 
     except Exception:
 
@@ -1510,7 +1732,11 @@ def verify_design(
 
     try:
 
-        candidate_foreground = _get_foreground_image(candidate_path)
+        candidate_foreground = (
+            _get_foreground_image(
+                candidate_path
+            )
+        )
 
     except Exception:
 
@@ -1573,19 +1799,29 @@ def calculate_final_score(
         and structure_score is not None
         and local_score is not None
     ):
+
         score = (
             DINO_WEIGHT * dino_score
             + SHAPE_WEIGHT * shape_score
             + STRUCTURE_WEIGHT * structure_score
             + LOCAL_WEIGHT * local_score
         )
+
     else:
+
         score = (
             DINO_WEIGHT * dino_score
-            + (1.0 - DINO_WEIGHT) * design_score
+            + (1.0 - DINO_WEIGHT)
+            * design_score
         )
 
-    return float(np.clip(score, 0.0, 1.0))
+    return float(
+        np.clip(
+            score,
+            0.0,
+            1.0,
+        )
+    )
 
 
 # ============================================================
@@ -1602,7 +1838,10 @@ def calculate_local_rescue(
     """
 
     score = (
-        LOCAL_RESCUE_DINO_WEIGHT * dino_score + LOCAL_RESCUE_LOCAL_WEIGHT * local_score
+        LOCAL_RESCUE_DINO_WEIGHT
+        * dino_score
+        + LOCAL_RESCUE_LOCAL_WEIGHT
+        * local_score
     )
 
     return float(
@@ -1635,10 +1874,14 @@ def should_accept_candidate(
 
     # Do not accept a candidate only because broad DINO + structure
     # similarity is high. Require meaningful shape/local design evidence.
-    if final_score >= FINAL_MATCH_THRESHOLD and (
-        design_score >= DESIGN_MATCH_THRESHOLD
-        or local_score >= LOCAL_MATCH_THRESHOLD
+    if (
+        final_score >= FINAL_MATCH_THRESHOLD
+        and (
+            design_score >= DESIGN_MATCH_THRESHOLD
+            or local_score >= LOCAL_MATCH_THRESHOLD
+        )
     ):
+
         return True, False
 
     # --------------------------------------------------------
@@ -1704,11 +1947,17 @@ def calculate_confidence(
     if not matched:
         return "LOW"
 
-    if best_score >= 0.30 and gap >= 0.03:
+    if (
+        best_score >= 0.30
+        and gap >= 0.03
+    ):
 
         return "HIGH"
 
-    if best_score >= 0.18 and gap >= MIN_CONFIDENCE_GAP:
+    if (
+        best_score >= 0.18
+        and gap >= MIN_CONFIDENCE_GAP
+    ):
 
         return "MEDIUM"
 
@@ -1732,13 +1981,22 @@ def _candidate_indices(
 
     indices = []
 
-    for position, collection in enumerate(collections):
+    for position, collection in enumerate(
+        collections
+    ):
 
-        normalized = normalize_collection(collection)
+        normalized = normalize_collection(
+            collection
+        )
 
-        if target_collection is None or normalized == target_collection:
+        if (
+            target_collection is None
+            or normalized == target_collection
+        ):
 
-            indices.append(position)
+            indices.append(
+                position
+            )
 
     return indices
 
@@ -1755,7 +2013,10 @@ def build_index(
     Build DINOv2-Base index.
     """
 
-    if INDEX_PATH.exists() and not force:
+    if (
+        INDEX_PATH.exists()
+        and not force
+    ):
 
         try:
             return load_index()
@@ -1804,9 +2065,15 @@ def build_index(
             )
         )
 
-        image_path = get_item_image_path(item)
+        image_path = get_item_image_path(
+            item
+        )
 
-        print(f"\n[{position}/{len(catalogue)}]" f" {item_id}" f" | {collection}")
+        print(
+            f"\n[{position}/{len(catalogue)}]"
+            f" {item_id}"
+            f" | {collection}"
+        )
 
         if not item_id:
 
@@ -1817,7 +2084,9 @@ def build_index(
                 }
             )
 
-            print("  ERROR: Missing ID")
+            print(
+                "  ERROR: Missing ID"
+            )
 
             continue
 
@@ -1830,11 +2099,16 @@ def build_index(
                 }
             )
 
-            print("  ERROR: Invalid collection")
+            print(
+                "  ERROR: Invalid collection"
+            )
 
             continue
 
-        if image_path is None or not image_path.exists():
+        if (
+            image_path is None
+            or not image_path.exists()
+        ):
 
             errors.append(
                 {
@@ -1843,33 +2117,56 @@ def build_index(
                 }
             )
 
-            print("  ERROR: Image not found")
+            print(
+                "  ERROR: Image not found"
+            )
 
             continue
 
         try:
 
-            embedding = create_embedding(image_path)
+            embedding = create_embedding(
+                image_path
+            )
 
-            embedding = _normalize_embedding(embedding)
+            embedding = _normalize_embedding(
+                embedding
+            )
 
-            if not validate_embedding(embedding):
+            if not validate_embedding(
+                embedding
+            ):
 
-                raise ValueError("Invalid embedding returned.")
+                raise ValueError(
+                    "Invalid embedding returned."
+                )
 
             if len(embedding) != EMBEDDING_DIMENSION:
 
-                raise ValueError("Unexpected embedding dimension: " f"{len(embedding)}")
+                raise ValueError(
+                    "Unexpected embedding dimension: "
+                    f"{len(embedding)}"
+                )
 
-            embeddings.append(embedding)
+            embeddings.append(
+                embedding
+            )
 
-            ids.append(item_id)
+            ids.append(
+                item_id
+            )
 
-            collections.append(collection)
+            collections.append(
+                collection
+            )
 
-            image_paths.append(str(image_path))
+            image_paths.append(
+                str(image_path)
+            )
 
-            print("  OK")
+            print(
+                "  OK"
+            )
 
         except Exception as exc:
 
@@ -1887,7 +2184,11 @@ def build_index(
 
     if embeddings:
 
-        embedding_matrix = np.vstack(embeddings).astype(np.float32)
+        embedding_matrix = np.vstack(
+            embeddings
+        ).astype(
+            np.float32
+        )
 
     else:
 
@@ -1904,7 +2205,11 @@ def build_index(
         exist_ok=True,
     )
 
-    temporary_path = INDEX_PATH.with_suffix(".tmp.npz")
+    temporary_path = (
+        INDEX_PATH.with_suffix(
+            ".tmp.npz"
+        )
+    )
 
     np.savez_compressed(
         temporary_path,
@@ -1922,19 +2227,35 @@ def build_index(
             dtype=object,
         ),
         version=np.asarray(2),
-        embedding_model=np.asarray(EMBEDDING_MODEL),
-        embedding_dimension=np.asarray(EMBEDDING_DIMENSION),
+        embedding_model=np.asarray(
+            EMBEDDING_MODEL
+        ),
+        embedding_dimension=np.asarray(
+            EMBEDDING_DIMENSION
+        ),
     )
 
-    temporary_path.replace(INDEX_PATH)
+    temporary_path.replace(
+        INDEX_PATH
+    )
 
-    gold_count = sum(1 for collection in collections if collection == "gold")
+    gold_count = sum(
+        1
+        for collection in collections
+        if collection == "gold"
+    )
 
-    prototype_count = sum(1 for collection in collections if collection == "prototype")
+    prototype_count = sum(
+        1
+        for collection in collections
+        if collection == "prototype"
+    )
 
     print("\n" + "=" * 70)
 
-    print("DINOv2-BASE INDEX CREATED")
+    print(
+        "DINOv2-BASE INDEX CREATED"
+    )
 
     print("=" * 70)
 
@@ -2004,39 +2325,543 @@ def build_index(
 
 
 # ============================================================
+# INCREMENTAL INDEX BUILD
+# ============================================================
+
+
+def build_incremental_index(
+    item_ids
+) -> dict:
+    """
+    Update the existing DINO index for the supplied catalogue IDs only.
+
+    Existing entries with the same ID are replaced so re-processing an
+    item never creates duplicate rows in the index.
+    """
+
+    requested_ids = []
+
+    seen_ids = set()
+
+    for value in item_ids or []:
+
+        item_id = str(
+            value
+        ).strip()
+
+        if (
+            item_id
+            and item_id not in seen_ids
+        ):
+
+            requested_ids.append(
+                item_id
+            )
+
+            seen_ids.add(
+                item_id
+            )
+
+    if not requested_ids:
+
+        return {
+            "success": True,
+            "processed_ids": [],
+            "errors": [],
+            "index_file": str(
+                INDEX_PATH
+            ),
+        }
+
+    if not INDEX_PATH.exists():
+
+        raise FileNotFoundError(
+            f"DINO index not found: {INDEX_PATH}. "
+            "Run a full index rebuild first."
+        )
+
+    print("\n" + "=" * 70)
+
+    print(
+        "CREATING INCREMENTAL DINOv2-BASE INDEX"
+    )
+
+    print("=" * 70)
+
+    catalogue = load_catalogue()
+
+    catalogue_by_id = {}
+
+    for item in catalogue:
+
+        item_id = str(
+            item.get(
+                "id",
+                item.get(
+                    "design_id",
+                    "",
+                ),
+            )
+        ).strip()
+
+        if item_id:
+
+            catalogue_by_id[
+                item_id
+            ] = item
+
+    # Load the current index without invoking a full rebuild.
+    current = load_index()
+
+    current_embeddings = np.asarray(
+        current["embeddings"],
+        dtype=np.float32,
+    )
+
+    current_ids = [
+        str(value)
+        for value in current["ids"]
+    ]
+
+    current_collections = [
+        normalize_collection(value)
+        for value in current["collections"]
+    ]
+
+    current_image_paths = [
+        str(value)
+        for value in current["image_paths"]
+    ]
+
+    # Remove all existing rows for IDs that will be regenerated.
+    rows_to_keep = [
+        index
+        for index, existing_id in enumerate(
+            current_ids
+        )
+        if existing_id not in seen_ids
+    ]
+
+    if rows_to_keep:
+
+        updated_embeddings = (
+            current_embeddings[
+                rows_to_keep
+            ]
+        )
+
+        updated_ids = [
+            current_ids[index]
+            for index in rows_to_keep
+        ]
+
+        updated_collections = [
+            current_collections[index]
+            for index in rows_to_keep
+        ]
+
+        updated_image_paths = [
+            current_image_paths[index]
+            for index in rows_to_keep
+        ]
+
+    else:
+
+        updated_embeddings = np.empty(
+            (
+                0,
+                EMBEDDING_DIMENSION,
+            ),
+            dtype=np.float32,
+        )
+
+        updated_ids = []
+
+        updated_collections = []
+
+        updated_image_paths = []
+
+    processed_ids = []
+
+    errors = []
+
+    for position, item_id in enumerate(
+        requested_ids,
+        start=1,
+    ):
+
+        item = catalogue_by_id.get(
+            item_id
+        )
+
+        print(
+            f"\n[{position}/{len(requested_ids)}] "
+            f"{item_id}"
+        )
+
+        if item is None:
+
+            error = (
+                "Catalogue item not found."
+            )
+
+            errors.append(
+                {
+                    "item": item_id,
+                    "error": error,
+                }
+            )
+
+            print(
+                "  ERROR:",
+                error,
+            )
+
+            continue
+
+        collection = normalize_collection(
+            item.get(
+                "collection",
+                item.get(
+                    "category",
+                ),
+            )
+        )
+
+        if collection is None:
+
+            error = (
+                "Invalid collection."
+            )
+
+            errors.append(
+                {
+                    "item": item_id,
+                    "error": error,
+                }
+            )
+
+            print(
+                "  ERROR:",
+                error,
+            )
+
+            continue
+
+        image_path = get_item_image_path(
+            item
+        )
+
+        if (
+            image_path is None
+            or not image_path.exists()
+        ):
+
+            error = (
+                "Image not found."
+            )
+
+            errors.append(
+                {
+                    "item": item_id,
+                    "error": error,
+                }
+            )
+
+            print(
+                "  ERROR:",
+                error,
+            )
+
+            continue
+
+        try:
+
+            embedding = create_embedding(
+                image_path
+            )
+
+            embedding = _normalize_embedding(
+                embedding
+            )
+
+            if not validate_embedding(
+                embedding
+            ):
+
+                raise ValueError(
+                    "Invalid embedding returned."
+                )
+
+            if len(embedding) != EMBEDDING_DIMENSION:
+
+                raise ValueError(
+                    "Unexpected embedding dimension: "
+                    f"{len(embedding)}"
+                )
+
+            updated_embeddings = np.vstack(
+                [
+                    updated_embeddings,
+                    embedding.reshape(
+                        1,
+                        -1,
+                    ),
+                ]
+            ).astype(
+                np.float32
+            )
+
+            updated_ids.append(
+                item_id
+            )
+
+            updated_collections.append(
+                collection
+            )
+
+            updated_image_paths.append(
+                str(image_path)
+            )
+
+            processed_ids.append(
+                item_id
+            )
+
+            print(
+                "  OK"
+            )
+
+        except Exception as exc:
+
+            errors.append(
+                {
+                    "item": item_id,
+                    "error": str(exc),
+                }
+            )
+
+            print(
+                "  ERROR:",
+                exc,
+            )
+
+    # Do not replace the index if none of the requested items could be
+    # processed. Existing indexed data remains untouched.
+    if not processed_ids:
+
+        print(
+            "\n[DINO] No requested items were successfully processed."
+        )
+
+        return {
+            "success": False,
+            "processed_ids": [],
+            "errors": errors,
+            "index_file": str(
+                INDEX_PATH
+            ),
+        }
+
+    DATABASE_DIR.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    temporary_path = (
+        INDEX_PATH.with_suffix(
+            ".tmp.npz"
+        )
+    )
+
+    np.savez_compressed(
+        temporary_path,
+        embeddings=updated_embeddings,
+        ids=np.asarray(
+            updated_ids,
+            dtype=object,
+        ),
+        collections=np.asarray(
+            updated_collections,
+            dtype=object,
+        ),
+        image_paths=np.asarray(
+            updated_image_paths,
+            dtype=object,
+        ),
+        version=np.asarray(2),
+        embedding_model=np.asarray(
+            EMBEDDING_MODEL
+        ),
+        embedding_dimension=np.asarray(
+            EMBEDDING_DIMENSION
+        ),
+    )
+
+    temporary_path.replace(
+        INDEX_PATH
+    )
+
+    gold_count = sum(
+        1
+        for collection in updated_collections
+        if collection == "gold"
+    )
+
+    prototype_count = sum(
+        1
+        for collection in updated_collections
+        if collection == "prototype"
+    )
+
+    print("\n" + "=" * 70)
+
+    print(
+        "INCREMENTAL DINOv2-BASE INDEX UPDATED"
+    )
+
+    print("=" * 70)
+
+    print(
+        "Processed     :",
+        len(processed_ids),
+    )
+
+    print(
+        "Total indexed :",
+        len(updated_embeddings),
+    )
+
+    print(
+        "Gold indexed  :",
+        gold_count,
+    )
+
+    print(
+        "Prototype     :",
+        prototype_count,
+    )
+
+    print(
+        "Errors        :",
+        len(errors),
+    )
+
+    print(
+        "Index file    :",
+        INDEX_PATH,
+    )
+
+    print("=" * 70)
+
+    return {
+        "success": len(errors) == 0,
+        "processed_ids": processed_ids,
+        "errors": errors,
+        "embeddings": updated_embeddings,
+        "ids": np.asarray(
+            updated_ids,
+            dtype=object,
+        ),
+        "collections": np.asarray(
+            updated_collections,
+            dtype=object,
+        ),
+        "image_paths": np.asarray(
+            updated_image_paths,
+            dtype=object,
+        ),
+        "version": 2,
+        "embedding_model": EMBEDDING_MODEL,
+        "embedding_dimension": EMBEDDING_DIMENSION,
+        "index_file": str(
+            INDEX_PATH
+        ),
+    }
+
+
+# ============================================================
 # FAST DESIGN SCREENING
 # ============================================================
 
-def fast_design_score(query_path: Path, candidate_path: Path) -> dict:
+
+def fast_design_score(
+    query_path: Path,
+    candidate_path: Path,
+) -> dict:
     """
     Cheap design screening used after DINO top-16 retrieval.
     SIFT is intentionally skipped here.
     """
-    query_image = _load_image(query_path)
-    candidate_image = _load_image(candidate_path)
 
-    if query_image is None or candidate_image is None:
-        return {"shape": 0.0, "structure": 0.0, "fast_design": 0.0}
+    query_image = _load_image(
+        query_path
+    )
+
+    candidate_image = _load_image(
+        candidate_path
+    )
+
+    if (
+        query_image is None
+        or candidate_image is None
+    ):
+
+        return {
+            "shape": 0.0,
+            "structure": 0.0,
+            "fast_design": 0.0,
+        }
 
     try:
-        query_foreground = _get_foreground_image(query_path)
+
+        query_foreground = (
+            _get_foreground_image(
+                query_path
+            )
+        )
+
     except Exception:
+
         query_foreground = query_image
 
     try:
-        candidate_foreground = _get_foreground_image(candidate_path)
+
+        candidate_foreground = (
+            _get_foreground_image(
+                candidate_path
+            )
+        )
+
     except Exception:
+
         candidate_foreground = candidate_image
 
-    shape = _shape_similarity(query_foreground, candidate_foreground)
-    structure = _structure_similarity(query_foreground, candidate_foreground)
+    shape = _shape_similarity(
+        query_foreground,
+        candidate_foreground,
+    )
 
-    fast_design = 0.40 * shape + 0.60 * structure
+    structure = _structure_similarity(
+        query_foreground,
+        candidate_foreground,
+    )
+
+    fast_design = (
+        0.40 * shape
+        + 0.60 * structure
+    )
 
     return {
         "shape": float(shape),
         "structure": float(structure),
-        "fast_design": float(np.clip(fast_design, 0.0, 1.0)),
+        "fast_design": float(
+            np.clip(
+                fast_design,
+                0.0,
+                1.0,
+            )
+        ),
     }
 
 
@@ -2066,9 +2891,13 @@ def match_jewellery(
             prototype_to_gold
     """
 
-    query_path = Path(query_path)
+    query_path = Path(
+        query_path
+    )
 
-    search_mode = normalize_search_mode(search_mode)
+    search_mode = normalize_search_mode(
+        search_mode
+    )
 
     top_k = max(
         1,
@@ -2080,7 +2909,9 @@ def match_jewellery(
 
     print("\n" + "=" * 70)
 
-    print("JEWELMATCH AI VISUAL SEARCH")
+    print(
+        "JEWELMATCH AI VISUAL SEARCH"
+    )
 
     print("=" * 70)
 
@@ -2155,14 +2986,19 @@ def match_jewellery(
 
     for item in catalogue:
 
-        item_path = get_item_image_path(item)
+        item_path = get_item_image_path(
+            item
+        )
 
         if item_path is None:
             continue
 
         try:
 
-            same_file = item_path.resolve() == query_path.resolve()
+            same_file = (
+                item_path.resolve()
+                == query_path.resolve()
+            )
 
         except Exception:
 
@@ -2170,12 +3006,14 @@ def match_jewellery(
 
         if same_file:
 
-            source_collection = normalize_collection(
-                item.get(
-                    "collection",
+            source_collection = (
+                normalize_collection(
                     item.get(
-                        "category",
-                    ),
+                        "collection",
+                        item.get(
+                            "category",
+                        ),
+                    )
                 )
             )
 
@@ -2194,13 +3032,21 @@ def match_jewellery(
     # QUERY EMBEDDING
     # ========================================================
 
-    print("\n[MATCHER] Creating query embedding...")
+    print(
+        "\n[MATCHER] Creating query embedding..."
+    )
 
     try:
 
-        query_embedding = create_embedding(query_path)
+        query_embedding = create_embedding(
+            query_path
+        )
 
-        query_embedding = _normalize_embedding(query_embedding)
+        query_embedding = (
+            _normalize_embedding(
+                query_embedding
+            )
+        )
 
         if len(query_embedding) != EMBEDDING_DIMENSION:
 
@@ -2256,7 +3102,11 @@ def match_jewellery(
             "target_collection": target_collection,
         }
 
-    candidate_embeddings = embeddings[candidate_indices]
+    candidate_embeddings = (
+        embeddings[
+            candidate_indices
+        ]
+    )
 
     # ========================================================
     # DINO RETRIEVAL
@@ -2267,19 +3117,32 @@ def match_jewellery(
         candidate_embeddings,
     )
 
-    ranked_local_positions = np.argsort(-dino_scores)
+    ranked_local_positions = np.argsort(
+        -dino_scores
+    )
 
     retrieved = []
 
     for local_position in ranked_local_positions:
 
-        dino_score = float(dino_scores[local_position])
+        dino_score = float(
+            dino_scores[
+                local_position
+            ]
+        )
 
-        if dino_score < DINO_RETRIEVAL_THRESHOLD:
+        if (
+            dino_score
+            < DINO_RETRIEVAL_THRESHOLD
+        ):
 
             continue
 
-        global_position = candidate_indices[local_position]
+        global_position = (
+            candidate_indices[
+                local_position
+            ]
+        )
 
         retrieved.append(
             {
@@ -2288,43 +3151,66 @@ def match_jewellery(
             }
         )
 
-        if len(retrieved) >= DINO_RETRIEVAL_TOP_K:
+        if (
+            len(retrieved)
+            >= DINO_RETRIEVAL_TOP_K
+        ):
 
             break
 
     # Fallback if threshold removes all.
     if not retrieved:
 
-        fallback_positions = ranked_local_positions[
-            : min(
-                DINO_RETRIEVAL_TOP_K,
-                len(ranked_local_positions),
-            )
-        ]
+        fallback_positions = (
+            ranked_local_positions[
+                : min(
+                    DINO_RETRIEVAL_TOP_K,
+                    len(
+                        ranked_local_positions
+                    ),
+                )
+            ]
+        )
 
         for local_position in fallback_positions:
 
-            global_position = candidate_indices[local_position]
+            global_position = (
+                candidate_indices[
+                    local_position
+                ]
+            )
 
             retrieved.append(
                 {
                     "index": global_position,
-                    "dino": float(dino_scores[local_position]),
+                    "dino": float(
+                        dino_scores[
+                            local_position
+                        ]
+                    ),
                 }
             )
 
-    print("\n" + "=" * 70)
+    print(
+        "\n" + "=" * 70
+    )
 
-    print("DINO RETRIEVAL")
+    print(
+        "DINO RETRIEVAL"
+    )
 
-    print("=" * 70)
+    print(
+        "=" * 70
+    )
 
     for position, candidate in enumerate(
         retrieved,
         start=1,
     ):
 
-        global_position = candidate["index"]
+        global_position = candidate[
+            "index"
+        ]
 
         print(
             f"{position:02d}. "
@@ -2337,28 +3223,72 @@ def match_jewellery(
     # FAST DESIGN SCREENING — ALL DINO TOP 16
     # ========================================================
 
-    print("\n" + "=" * 70)
-    print("FAST DESIGN SCREENING — TOP 16")
-    print("=" * 70)
+    print(
+        "\n" + "=" * 70
+    )
+
+    print(
+        "FAST DESIGN SCREENING — TOP 16"
+    )
+
+    print(
+        "=" * 70
+    )
 
     fast_screened = []
 
-    for position, candidate in enumerate(retrieved[:DINO_RETRIEVAL_TOP_K], start=1):
-        global_position = candidate["index"]
-        candidate_id = str(ids[global_position])
-        candidate_path = resolve_image_path(str(image_paths[global_position]))
+    for position, candidate in enumerate(
+        retrieved[
+            :DINO_RETRIEVAL_TOP_K
+        ],
+        start=1,
+    ):
 
-        if candidate_path is None or not candidate_path.exists():
+        global_position = candidate[
+            "index"
+        ]
+
+        candidate_id = str(
+            ids[global_position]
+        )
+
+        candidate_path = (
+            resolve_image_path(
+                str(
+                    image_paths[
+                        global_position
+                    ]
+                )
+            )
+        )
+
+        if (
+            candidate_path is None
+            or not candidate_path.exists()
+        ):
+
             continue
 
-        fast = fast_design_score(query_path, candidate_path)
-        fast_screened.append({
-            **candidate,
-            "path": candidate_path,
-            "fast_shape": fast["shape"],
-            "fast_structure": fast["structure"],
-            "fast_design": fast["fast_design"],
-        })
+        fast = fast_design_score(
+            query_path,
+            candidate_path,
+        )
+
+        fast_screened.append(
+            {
+                **candidate,
+                "path": candidate_path,
+                "fast_shape": fast[
+                    "shape"
+                ],
+                "fast_structure": fast[
+                    "structure"
+                ],
+                "fast_design": fast[
+                    "fast_design"
+                ],
+            }
+        )
 
         print(
             f"{position:02d}. {candidate_id} "
@@ -2385,20 +3315,35 @@ def match_jewellery(
         fast_screened,
         key=lambda x: x["dino"],
         reverse=True,
-    )[:DINO_PROTECTED_TOP_K]
+    )[
+        :DINO_PROTECTED_TOP_K
+    ]
 
     fast_ranked = sorted(
         fast_screened,
-        key=lambda x: (x["fast_design"], x["dino"]),
+        key=lambda x: (
+            x["fast_design"],
+            x["dino"],
+        ),
         reverse=True,
-    )[:FAST_DESIGN_TOP_K]
+    )[
+        :FAST_DESIGN_TOP_K
+    ]
 
     verification_map = {}
 
-    for candidate in dino_protected + fast_ranked:
-        verification_map[candidate["index"]] = candidate
+    for candidate in (
+        dino_protected
+        + fast_ranked
+    ):
 
-    verification_candidates = list(verification_map.values())
+        verification_map[
+            candidate["index"]
+        ] = candidate
+
+    verification_candidates = list(
+        verification_map.values()
+    )
 
     # Put stronger DINO candidates first in the verification log.
     verification_candidates.sort(
@@ -2406,38 +3351,83 @@ def match_jewellery(
         reverse=True,
     )
 
-    verification_candidates = verification_candidates[:EXPENSIVE_VERIFY_TOP_K]
+    verification_candidates = (
+        verification_candidates[
+            :EXPENSIVE_VERIFY_TOP_K
+        ]
+    )
 
-    print("\n[DESIGN] Expensive verification candidates:", len(verification_candidates))
+    print(
+        "\n[DESIGN] Expensive verification candidates:",
+        len(
+            verification_candidates
+        ),
+    )
 
     # ========================================================
     # EXPENSIVE DESIGN VERIFICATION — TOP 8
     # ========================================================
 
-    print("\n" + "=" * 70)
-    print("EXPENSIVE DESIGN VERIFICATION — TOP 8")
-    print("=" * 70)
+    print(
+        "\n" + "=" * 70
+    )
+
+    print(
+        "EXPENSIVE DESIGN VERIFICATION — TOP 8"
+    )
+
+    print(
+        "=" * 70
+    )
 
     verified = []
 
-    for position, candidate in enumerate(verification_candidates, start=1):
+    for position, candidate in enumerate(
+        verification_candidates,
+        start=1,
+    ):
 
-        global_position = candidate["index"]
+        global_position = candidate[
+            "index"
+        ]
 
-        candidate_id = str(ids[global_position])
+        candidate_id = str(
+            ids[global_position]
+        )
 
-        candidate_collection = normalize_collection(collections[global_position])
+        candidate_collection = (
+            normalize_collection(
+                collections[
+                    global_position
+                ]
+            )
+        )
 
-        candidate_path = candidate.get("path") or resolve_image_path(str(image_paths[global_position]))
+        candidate_path = (
+            candidate.get("path")
+            or resolve_image_path(
+                str(
+                    image_paths[
+                        global_position
+                    ]
+                )
+            )
+        )
 
-        print(f"\n[CANDIDATE {position}] " f"{candidate_id}")
+        print(
+            f"\n[CANDIDATE {position}] "
+            f"{candidate_id}"
+        )
 
         print(
             "  Collection:",
             candidate_collection,
         )
 
-        if not candidate_path.exists():
+        if (
+            candidate_path is None
+            or not candidate_path.exists()
+        ):
 
             print(
                 "  Image not found:",
@@ -2483,15 +3473,25 @@ def match_jewellery(
             candidate_path,
         )
 
-        shape_score = verification["shape"]
+        shape_score = verification[
+            "shape"
+        ]
 
-        structure_score = verification["structure"]
+        structure_score = verification[
+            "structure"
+        ]
 
-        local_score = verification["local"]
+        local_score = verification[
+            "local"
+        ]
 
-        design_score = verification["design"]
+        design_score = verification[
+            "design"
+        ]
 
-        dino_score = candidate["dino"]
+        dino_score = candidate[
+            "dino"
+        ]
 
         final_score = calculate_final_score(
             dino_score,
@@ -2501,16 +3501,20 @@ def match_jewellery(
             local_score=local_score,
         )
 
-        local_rescue_score = calculate_local_rescue(
-            dino_score,
-            local_score,
+        local_rescue_score = (
+            calculate_local_rescue(
+                dino_score,
+                local_score,
+            )
         )
 
-        accepted, local_rescue = should_accept_candidate(
-            dino_score,
-            design_score,
-            local_score,
-            final_score,
+        accepted, local_rescue = (
+            should_accept_candidate(
+                dino_score,
+                design_score,
+                local_score,
+                final_score,
+            )
         )
 
         verified.append(
@@ -2519,32 +3523,66 @@ def match_jewellery(
                 "design_id": candidate_id,
                 "name": candidate_name,
                 "collection": candidate_collection,
-                "image_path": str(candidate_path),
-                "dino_score": float(dino_score),
-                "shape_score": float(shape_score),
-                "structure_score": float(structure_score),
-                "local_score": float(local_score),
-                "design_score": float(design_score),
-                "final_score": float(final_score),
-                "local_rescue_score": float(local_rescue_score),
-                "accepted": bool(accepted),
-                "local_rescue": bool(local_rescue),
+                "image_path": str(
+                    candidate_path
+                ),
+                "dino_score": float(
+                    dino_score
+                ),
+                "shape_score": float(
+                    shape_score
+                ),
+                "structure_score": float(
+                    structure_score
+                ),
+                "local_score": float(
+                    local_score
+                ),
+                "design_score": float(
+                    design_score
+                ),
+                "final_score": float(
+                    final_score
+                ),
+                "local_rescue_score": float(
+                    local_rescue_score
+                ),
+                "accepted": bool(
+                    accepted
+                ),
+                "local_rescue": bool(
+                    local_rescue
+                ),
             }
         )
 
-        print(f"  Name: {candidate_name}")
+        print(
+            f"  Name: {candidate_name}"
+        )
 
-        print(f"  DINO: {dino_score:.4f}")
+        print(
+            f"  DINO: {dino_score:.4f}"
+        )
 
-        print(f"  Shape: {shape_score:.4f}")
+        print(
+            f"  Shape: {shape_score:.4f}"
+        )
 
-        print(f"  Structure: {structure_score:.4f}")
+        print(
+            f"  Structure: {structure_score:.4f}"
+        )
 
-        print(f"  Local/SIFT: {local_score:.4f}")
+        print(
+            f"  Local/SIFT: {local_score:.4f}"
+        )
 
-        print(f"  Design score: {design_score:.4f}")
+        print(
+            f"  Design score: {design_score:.4f}"
+        )
 
-        print(f"  Final: {final_score:.4f}")
+        print(
+            f"  Final: {final_score:.4f}"
+        )
 
     # ========================================================
     # RANK RESULTS
@@ -2560,21 +3598,31 @@ def match_jewellery(
         reverse=True,
     )
 
-    top_verified = verified[:top_k]
+    top_verified = verified[
+        :top_k
+    ]
 
     # ========================================================
     # FINAL MATCH
     # ========================================================
 
-    print("\n" + "=" * 70)
+    print(
+        "\n" + "=" * 70
+    )
 
-    print("FINAL MATCH ANALYSIS")
+    print(
+        "FINAL MATCH ANALYSIS"
+    )
 
-    print("=" * 70)
+    print(
+        "=" * 70
+    )
 
     if not verified:
 
-        print("[MATCHER] No valid candidates.")
+        print(
+            "[MATCHER] No valid candidates."
+        )
 
         return {
             "success": True,
@@ -2591,13 +3639,24 @@ def match_jewellery(
 
     best = verified[0]
 
-    best_score = best["final_score"]
+    best_score = best[
+        "final_score"
+    ]
 
-    second_score = verified[1]["final_score"] if len(verified) > 1 else 0.0
+    second_score = (
+        verified[1]["final_score"]
+        if len(verified) > 1
+        else 0.0
+    )
 
-    gap = best_score - second_score
+    gap = (
+        best_score
+        - second_score
+    )
 
-    matched = bool(best["accepted"])
+    matched = bool(
+        best["accepted"]
+    )
 
     confidence = calculate_confidence(
         best_score,
@@ -2605,39 +3664,81 @@ def match_jewellery(
         matched,
     )
 
-    print(f"[MATCHER] Candidate: {best['id']}")
+    print(
+        f"[MATCHER] Candidate: {best['id']}"
+    )
 
-    print(f"[MATCHER] Collection: " f"{best['collection']}")
+    print(
+        f"[MATCHER] Collection: "
+        f"{best['collection']}"
+    )
 
-    print(f"[MATCHER] Name: " f"{best['name']}")
+    print(
+        f"[MATCHER] Name: "
+        f"{best['name']}"
+    )
 
-    print(f"[MATCHER] DINO: " f"{best['dino_score']:.4f}")
+    print(
+        f"[MATCHER] DINO: "
+        f"{best['dino_score']:.4f}"
+    )
 
-    print(f"[MATCHER] Shape: " f"{best['shape_score']:.4f}")
+    print(
+        f"[MATCHER] Shape: "
+        f"{best['shape_score']:.4f}"
+    )
 
-    print(f"[MATCHER] Structure: " f"{best['structure_score']:.4f}")
+    print(
+        f"[MATCHER] Structure: "
+        f"{best['structure_score']:.4f}"
+    )
 
-    print(f"[MATCHER] Local/SIFT: " f"{best['local_score']:.4f}")
+    print(
+        f"[MATCHER] Local/SIFT: "
+        f"{best['local_score']:.4f}"
+    )
 
-    print(f"[MATCHER] Design score: " f"{best['design_score']:.4f}")
+    print(
+        f"[MATCHER] Design score: "
+        f"{best['design_score']:.4f}"
+    )
 
-    print(f"[MATCHER] Final score: " f"{best_score:.4f}")
+    print(
+        f"[MATCHER] Final score: "
+        f"{best_score:.4f}"
+    )
 
-    print(f"[MATCHER] Second score: " f"{second_score:.4f}")
+    print(
+        f"[MATCHER] Second score: "
+        f"{second_score:.4f}"
+    )
 
-    print(f"[MATCHER] Gap: " f"{gap:.4f}")
+    print(
+        f"[MATCHER] Gap: "
+        f"{gap:.4f}"
+    )
 
-    print(f"[MATCHER] Confidence: " f"{confidence}")
+    print(
+        f"[MATCHER] Confidence: "
+        f"{confidence}"
+    )
 
-    print(f"[MATCHER] Local rescue: " f"{best['local_rescue']}")
+    print(
+        f"[MATCHER] Local rescue: "
+        f"{best['local_rescue']}"
+    )
 
     if matched:
 
-        print("[MATCHER] STATUS: MATCH")
+        print(
+            "[MATCHER] STATUS: MATCH"
+        )
 
     else:
 
-        print("[MATCHER] STATUS: NO MATCH")
+        print(
+            "[MATCHER] STATUS: NO MATCH"
+        )
 
     # ========================================================
     # API RESULTS
@@ -2647,37 +3748,69 @@ def match_jewellery(
 
     for item in top_verified:
 
-        result_item = dict(item)
+        result_item = dict(
+            item
+        )
 
         try:
 
-            candidate_path = Path(item["image_path"])
+            candidate_path = Path(
+                item["image_path"]
+            )
 
-            relative = candidate_path.relative_to(CATALOGUE_DIR)
+            relative = (
+                candidate_path.relative_to(
+                    CATALOGUE_DIR
+                )
+            )
 
-            relative_parts = relative.parts
+            relative_parts = (
+                relative.parts
+            )
 
             if len(relative_parts) >= 2:
 
-                collection = relative_parts[0]
-
-                filename = "/".join(relative_parts[1:])
-
-                result_item["image_url"] = (
-                    "/catalogue-image/" f"{collection}/" f"{filename}"
+                collection = (
+                    relative_parts[0]
                 )
 
-                result_item["image"] = result_item["image_url"]
+                filename = "/".join(
+                    relative_parts[1:]
+                )
+
+                result_item[
+                    "image_url"
+                ] = (
+                    "/catalogue-image/"
+                    f"{collection}/"
+                    f"{filename}"
+                )
+
+                result_item[
+                    "image"
+                ] = result_item[
+                    "image_url"
+                ]
 
         except Exception:
 
             pass
 
-        result_item["similarity"] = item["final_score"]
+        result_item[
+            "similarity"
+        ] = item[
+            "final_score"
+        ]
 
-        result_item["score"] = item["final_score"]
+        result_item[
+            "score"
+        ] = item[
+            "final_score"
+        ]
 
-        results.append(result_item)
+        results.append(
+            result_item
+        )
 
     # ========================================================
     # RESPONSE
@@ -2692,9 +3825,15 @@ def match_jewellery(
             else "No reliable jewellery match found."
         ),
         "results": results,
-        "best_similarity": float(best_score),
-        "similarity": float(best_score),
-        "score": float(best_score),
+        "best_similarity": float(
+            best_score
+        ),
+        "similarity": float(
+            best_score
+        ),
+        "score": float(
+            best_score
+        ),
         "confidence": confidence,
         "source_collection": source_collection,
         "target_collection": target_collection,
@@ -2709,12 +3848,15 @@ def match_jewellery(
 # COMMAND LINE TEST
 # ============================================================
 
+
 if __name__ == "__main__":
 
     import argparse
 
     parser = argparse.ArgumentParser(
-        description=("JewelMatch AI visual jewellery matcher")
+        description=(
+            "JewelMatch AI visual jewellery matcher"
+        )
     )
 
     parser.add_argument(
@@ -2749,7 +3891,9 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    print("\nJewelMatch AI")
+    print(
+        "\nJewelMatch AI"
+    )
 
     print(
         "Query:",
@@ -2763,7 +3907,9 @@ if __name__ == "__main__":
 
     if args.rebuild:
 
-        build_index(force=True)
+        build_index(
+            force=True
+        )
 
     result = match_jewellery(
         args.image,
@@ -2771,11 +3917,17 @@ if __name__ == "__main__":
         search_mode=args.mode,
     )
 
-    print("\n" + "=" * 70)
+    print(
+        "\n" + "=" * 70
+    )
 
-    print("RESULT")
+    print(
+        "RESULT"
+    )
 
-    print("=" * 70)
+    print(
+        "=" * 70
+    )
 
     print(
         json.dumps(

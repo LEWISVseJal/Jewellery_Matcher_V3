@@ -47,7 +47,6 @@ const JEWELLERY_TYPES = [
 
 
 function getInitialForm(item) {
-
   return {
     name:
       item?.name ||
@@ -70,10 +69,14 @@ function getInitialForm(item) {
 
 
 function CataloguePage() {
-
   const [items, setItems] =
     useState([]);
 
+  /*
+   * These statistics represent the COMPLETE catalogue.
+   * They are intentionally independent of the selected
+   * collection filter and search term.
+   */
   const [totalCount, setTotalCount] =
     useState(0);
 
@@ -128,43 +131,80 @@ function CataloguePage() {
   ========================================================== */
 
   async function loadCatalogue() {
-
     try {
-
       setIsLoading(true);
-
       setError("");
 
-
-      const data =
+      /*
+       * --------------------------------------------------------
+       * REQUEST 1
+       * --------------------------------------------------------
+       * Get the items that should actually be displayed.
+       *
+       * This request respects:
+       * - collection filter
+       * - search text
+       */
+      const filteredData =
         await getCatalogue({
           collection:
             collectionFilter,
-          search,
+
+          search:
+            search,
         });
 
 
+      /*
+       * --------------------------------------------------------
+       * REQUEST 2
+       * --------------------------------------------------------
+       * Get the COMPLETE catalogue.
+       *
+       * This request intentionally ignores:
+       * - collection filter
+       * - search text
+       *
+       * Therefore the statistics always represent
+       * the complete catalogue.
+       */
+      const statisticsData =
+        await getCatalogue({
+          collection: "all",
+          search: "",
+        });
+
+
+      /* --------------------------------------------------------
+         DISPLAYED ITEMS
+      -------------------------------------------------------- */
+
       setItems(
-        data?.items || []
+        filteredData?.items ||
+        []
       );
 
+
+      /* --------------------------------------------------------
+         COMPLETE CATALOGUE STATISTICS
+      -------------------------------------------------------- */
 
       setTotalCount(
-        data?.total_count || 0
+        statisticsData?.total_count ??
+        0
       );
-
 
       setGoldCount(
-        data?.gold_count || 0
+        statisticsData?.gold_count ??
+        0
       );
 
-
       setPrototypeCount(
-        data?.prototype_count || 0
+        statisticsData?.prototype_count ??
+        0
       );
 
     } catch (loadError) {
-
       console.error(
         "Catalogue error:",
         loadError
@@ -176,14 +216,12 @@ function CataloguePage() {
       );
 
     } finally {
-
       setIsLoading(false);
     }
   }
 
 
   useEffect(() => {
-
     const timer =
       setTimeout(
         () => {
@@ -191,7 +229,6 @@ function CataloguePage() {
         },
         250
       );
-
 
     return () =>
       clearTimeout(timer);
@@ -203,7 +240,7 @@ function CataloguePage() {
 
 
   /* ==========================================================
-     FILTER
+     FILTERED / VISIBLE ITEMS
   ========================================================== */
 
   const visibleItems =
@@ -218,7 +255,6 @@ function CataloguePage() {
   ========================================================== */
 
   function openEdit(item) {
-
     setEditingItem(item);
 
     setEditForm(
@@ -234,7 +270,6 @@ function CataloguePage() {
 
 
   function closeEdit() {
-
     if (isSavingEdit) {
       return;
     }
@@ -248,12 +283,10 @@ function CataloguePage() {
   function handleEditChange(
     event
   ) {
-
     const {
       name,
       value,
     } = event.target;
-
 
     setEditForm(
       (current) => ({
@@ -267,17 +300,13 @@ function CataloguePage() {
   async function handleSaveEdit(
     event
   ) {
-
     event.preventDefault();
-
 
     if (!editingItem) {
       return;
     }
 
-
     try {
-
       setIsSavingEdit(true);
 
       setError("");
@@ -293,25 +322,29 @@ function CataloguePage() {
       const response =
         await updateJewellery({
           id,
-          image: editImage,
+
+          image:
+            editImage,
+
           name:
             editForm.name.trim(),
+
           collection:
             editForm.collection,
+
           type:
             editForm.type,
+
           description:
             editForm.description.trim(),
         });
 
 
       if (!response?.success) {
-
         throw new Error(
           response?.message ||
           "Unable to update jewellery."
         );
-
       }
 
 
@@ -325,10 +358,14 @@ function CataloguePage() {
       setEditImage(null);
 
 
+      /*
+       * Reload both:
+       * - visible items
+       * - complete statistics
+       */
       await loadCatalogue();
 
     } catch (saveError) {
-
       console.error(
         "Update error:",
         saveError
@@ -340,7 +377,6 @@ function CataloguePage() {
       );
 
     } finally {
-
       setIsSavingEdit(false);
     }
   }
@@ -353,7 +389,6 @@ function CataloguePage() {
   async function handleDelete(
     item
   ) {
-
     const designId =
       item.design_id ||
       item.id;
@@ -371,7 +406,6 @@ function CataloguePage() {
 
 
     try {
-
       setError("");
 
       setMessage("");
@@ -387,10 +421,14 @@ function CataloguePage() {
       );
 
 
+      /*
+       * Reload both:
+       * - visible items
+       * - complete statistics
+       */
       await loadCatalogue();
 
     } catch (deleteError) {
-
       console.error(
         "Delete error:",
         deleteError
@@ -400,7 +438,6 @@ function CataloguePage() {
         deleteError.message ||
         "Unable to delete jewellery."
       );
-
     }
   }
 
@@ -410,9 +447,7 @@ function CataloguePage() {
   ========================================================== */
 
   async function handleRebuild() {
-
     try {
-
       setIsRebuilding(true);
 
       setError("");
@@ -428,7 +463,6 @@ function CataloguePage() {
       );
 
     } catch (rebuildError) {
-
       console.error(
         "Rebuild error:",
         rebuildError
@@ -440,11 +474,14 @@ function CataloguePage() {
       );
 
     } finally {
-
       setIsRebuilding(false);
     }
   }
 
+
+  /* ==========================================================
+     RENDER
+  ========================================================== */
 
   return (
     <div className="catalogue-page">
@@ -572,10 +609,12 @@ function CataloguePage() {
                 value: "all",
                 label: "All",
               },
+
               {
                 value: "gold",
                 label: "Gold",
               },
+
               {
                 value: "prototype",
                 label: "Prototype",
@@ -586,12 +625,14 @@ function CataloguePage() {
                 <button
                   key={filter.value}
                   type="button"
+
                   className={
                     collectionFilter ===
                     filter.value
                       ? "active"
                       : ""
                   }
+
                   onClick={() =>
                     setCollectionFilter(
                       filter.value
@@ -628,7 +669,7 @@ function CataloguePage() {
 
 
         {/* ===================================================
-            LOADING
+            LOADING / CATALOGUE
         =================================================== */}
 
         {isLoading ? (
@@ -655,8 +696,11 @@ function CataloguePage() {
                     item.design_id ||
                     item.id
                   }
+
                   item={item}
+
                   onEdit={openEdit}
+
                   onDelete={handleDelete}
                 />
 
@@ -697,6 +741,7 @@ function CataloguePage() {
 
         <div
           className="edit-overlay"
+
           onMouseDown={(event) => {
 
             if (
@@ -743,6 +788,8 @@ function CataloguePage() {
               onSubmit={handleSaveEdit}
             >
 
+              {/* NAME */}
+
               <div className="edit-form-group">
 
                 <label>
@@ -760,6 +807,8 @@ function CataloguePage() {
 
               </div>
 
+
+              {/* COLLECTION */}
 
               <div className="edit-form-group">
 
@@ -794,6 +843,8 @@ function CataloguePage() {
 
               </div>
 
+
+              {/* TYPE */}
 
               <div className="edit-form-group">
 
@@ -832,6 +883,8 @@ function CataloguePage() {
               </div>
 
 
+              {/* DESCRIPTION */}
+
               <div className="edit-form-group">
 
                 <label>
@@ -852,6 +905,8 @@ function CataloguePage() {
               </div>
 
 
+              {/* IMAGE */}
+
               <div className="edit-form-group">
 
                 <label>
@@ -871,6 +926,8 @@ function CataloguePage() {
 
               </div>
 
+
+              {/* ACTIONS */}
 
               <div className="edit-actions">
 

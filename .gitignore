@@ -59,3 +59,15 @@ frontend/react/dist/
 frontend/react/.env
 frontend/react/.env.*
 !frontend/react/.env.example
+# AI runtime state
+backend/database/ai_queue_status.json
+
+# Runtime uploaded files
+backend/database/uploads/*
+!backend/database/uploads/.gitkeep
+
+# Local source/reference image dataset
+images_G_P/
+
+# Local database backup
+backend/database/jewellery_backup.json

@@ -1,270 +1,332 @@
 [
   {
-    "id": "J001",
-    "name": "Prototype8657",
-    "type": "GP",
-    "collection": "Prototype",
-    "description": "",
-    "image": "J001.jpeg"
-  },
-  {
-    "id": "J002",
-    "name": "PrototypeA3274",
-    "type": "Ring",
-    "collection": "Prototype",
-    "description": "",
-    "image": "J002.jpeg"
-  },
-  {
-    "id": "J003",
-    "name": "PrototypeA1662",
-    "type": "FOTO",
-    "collection": "Prototype",
-    "description": "",
-    "image": "J003.jpeg"
-  },
-  {
-    "id": "J004",
-    "name": "PrototypeA551",
-    "type": "Ring",
-    "collection": "Prototype",
-    "description": "",
-    "image": "J004.jpeg"
-  },
-  {
-    "id": "J005",
-    "name": "Prototype4823",
-    "type": "Ring",
-    "collection": "Prototype",
-    "description": "",
-    "image": "J005.jpeg"
-  },
-  {
-    "id": "J006",
-    "name": "PrototypeH-43",
-    "type": "Ring",
-    "collection": "Prototype",
-    "description": "",
-    "image": "J006.jpeg"
-  },
-  {
-    "id": "J007",
-    "name": "Prototype3246",
-    "type": "Ring",
-    "collection": "Prototype",
-    "description": "",
-    "image": "J007.jpeg"
-  },
-  {
-    "id": "J008",
-    "name": "Prototype684",
-    "type": "Ring",
-    "collection": "Prototype",
-    "description": "",
-    "image": "J008.jpeg"
-  },
-  {
-    "id": "J009",
-    "name": "PrototypeA3311",
-    "type": "Ring",
-    "collection": "Prototype",
-    "description": "",
-    "image": "J009.jpeg"
-  },
-  {
-    "id": "J010",
-    "name": "Prototype4711",
-    "type": "Ring",
-    "collection": "Prototype",
-    "description": "",
-    "image": "J010.jpeg"
-  },
-  {
-    "id": "J011",
-    "name": "Prototype4835",
-    "type": "Ring",
-    "collection": "Prototype",
-    "description": "",
-    "image": "J011.jpeg"
-  },
-  {
-    "id": "J012",
-    "name": "PrototypeA3148",
-    "type": "Ring",
-    "collection": "Prototype",
-    "description": "",
-    "image": "J012.jpeg"
-  },
-  {
     "id": "J013",
-    "name": "Prototype64",
-    "type": "Ring",
     "collection": "Prototype",
     "description": "",
-    "image": "J013.jpeg"
+    "image": "J013.jpeg",
+    "name": "Prototype64",
+    "type": "FOTO",
+    "design_name": "Prototype64",
+    "image_url": "/catalogue-image/prototype/J013.jpeg"
   },
   {
     "id": "J014",
-    "name": "Prototype3829",
-    "type": "Ring",
     "collection": "Prototype",
     "description": "",
-    "image": "J014.jpeg"
+    "image": "J014.jpeg",
+    "name": "Prototype3829",
+    "type": "Ring",
+    "image_url": "/catalogue-image/prototype/J014.jpeg"
   },
   {
     "id": "J015",
-    "name": "PrototypeA1614",
-    "type": "Ring",
     "collection": "Prototype",
     "description": "",
-    "image": "J015.jpeg"
+    "image": "J015.jpeg",
+    "name": "PrototypeA1614",
+    "type": "Ring",
+    "image_url": "/catalogue-image/prototype/J015.jpeg"
   },
   {
     "id": "J016",
-    "name": "Prototype4374",
-    "type": "Ring",
     "collection": "Prototype",
     "description": "",
-    "image": "J016.jpeg"
+    "image": "J016.jpeg",
+    "name": "Prototype4374",
+    "type": "Ring",
+    "image_url": "/catalogue-image/prototype/J016.jpeg"
   },
   {
     "id": "J017",
-    "name": "Gold Vanki Ring",
-    "type": "Ring",
     "collection": "Gold",
     "description": "",
-    "image": "J017.jpeg"
+    "image": "J017.jpeg",
+    "name": "Gold Vanki Ring",
+    "type": "Ring",
+    "image_url": "/catalogue-image/gold/J017.jpeg"
   },
   {
     "id": "J018",
-    "name": "Gold Infinity Ring",
-    "type": "Ring",
     "collection": "Gold",
     "description": "",
-    "image": "J018.jpeg"
+    "image": "J018.jpeg",
+    "name": "Gold Infinity Ring",
+    "type": "Ring",
+    "image_url": "/catalogue-image/gold/J018.jpeg"
   },
   {
     "id": "J019",
-    "name": "Gold Nova Ring",
-    "type": "Ring",
     "collection": "Gold",
     "description": "",
-    "image": "J019.jpeg"
+    "image": "J019.jpeg",
+    "name": "Gold Nova Ring",
+    "type": "Ring",
+    "image_url": "/catalogue-image/gold/J019.jpeg"
   },
   {
     "id": "J020",
-    "name": "Gold Classic Ashoka Ring",
-    "type": "Ring",
     "collection": "Gold",
     "description": "",
-    "image": "J020.jpeg"
+    "image": "J020.jpeg",
+    "name": "Gold Classic Ashoka Ring",
+    "type": "Ring",
+    "image_url": "/catalogue-image/gold/J020.jpeg"
   },
   {
     "id": "J021",
-    "name": "Gold Monarch Ring",
-    "type": "Ring",
     "collection": "Gold",
     "description": "",
-    "image": "J021.jpeg"
+    "image": "J021.jpeg",
+    "name": "Gold Monarch Ring",
+    "type": "Ring",
+    "image_url": "/catalogue-image/gold/J021.jpeg"
   },
   {
     "id": "J022",
-    "name": "Gold Dynasty Ring",
-    "type": "Ring",
     "collection": "Gold",
     "description": "",
-    "image": "J022.jpeg"
+    "image": "J022.jpeg",
+    "name": "Gold Dynasty Ring",
+    "type": "Ring",
+    "image_url": "/catalogue-image/gold/J022.jpeg"
   },
   {
     "id": "J023",
-    "name": "Gold Sovereign Ashoka Ring",
-    "type": "Ring",
     "collection": "Gold",
     "description": "",
-    "image": "J023.jpeg"
+    "image": "J023.jpeg",
+    "name": "Gold Sovereign Ashoka Ring",
+    "type": "Ring",
+    "image_url": "/catalogue-image/gold/J023.jpeg"
   },
   {
     "id": "J024",
-    "name": "Gold Petal Ring",
-    "type": "Ring",
     "collection": "Gold",
     "description": "",
-    "image": "J024.jpeg"
+    "image": "J024.jpeg",
+    "name": "Gold Petal Ring",
+    "type": "Ring",
+    "image_url": "/catalogue-image/gold/J024.jpeg"
   },
   {
     "id": "J025",
-    "name": "Gold HeartsEcho Ring",
-    "type": "Ring",
     "collection": "Gold",
     "description": "",
-    "image": "J025.jpeg"
+    "image": "J025.jpeg",
+    "name": "Gold HeartsEcho Ring",
+    "type": "Ring",
+    "image_url": "/catalogue-image/gold/J025.jpeg"
   },
   {
     "id": "J026",
-    "name": "Classic Empress Ring",
-    "type": "Ring",
     "collection": "Gold",
     "description": "",
-    "image": "J026.jpeg"
+    "image": "J026.jpeg",
+    "name": "Classic Empress Ring",
+    "type": "Ring",
+    "image_url": "/catalogue-image/gold/J026.jpeg"
   },
   {
     "id": "J027",
-    "name": "Classic Gold Legacy Ring",
-    "type": "Ring",
     "collection": "Gold",
     "description": "",
-    "image": "J027.jpeg"
+    "image": "J027.jpeg",
+    "name": "Classic Gold Legacy Ring",
+    "type": "Ring",
+    "image_url": "/catalogue-image/gold/J027.jpeg"
   },
   {
     "id": "J028",
-    "name": "Classic Gold Ganeshji Ring",
-    "type": "Ring",
     "collection": "Gold",
     "description": "",
-    "image": "J028.jpeg"
+    "image": "J028.jpeg",
+    "name": "Classic Gold Ganeshji Ring",
+    "type": "Ring",
+    "image_url": "/catalogue-image/gold/J028.jpeg"
   },
   {
     "id": "J029",
-    "name": "Gold Cherish Petal Ring",
-    "type": "Ring",
     "collection": "Gold",
     "description": "",
-    "image": "J029.jpeg"
+    "image": "J029.jpeg",
+    "name": "Gold Cherish Petal Ring",
+    "type": "Ring",
+    "image_url": "/catalogue-image/gold/J029.jpeg"
   },
   {
     "id": "J030",
-    "name": "Classic Baroque Anchor Ring",
-    "type": "Ring",
     "collection": "Gold",
     "description": "",
-    "image": "J030.jpeg"
+    "image": "J030.jpeg",
+    "name": "Classic Baroque Anchor Ring",
+    "type": "Ring",
+    "image_url": "/catalogue-image/gold/J030.jpeg"
   },
   {
     "id": "J031",
+    "collection": "Gold",
+    "description": "",
+    "design_name": "Gold Aurora Ring",
+    "image": "J031.jpeg",
     "name": "Gold Aurora Ring",
-    "type": "Ring",
-    "collection": "Gold",
-    "description": "",
-    "image": "J031.jpeg"
-  },
-  {
-    "id": "GOLD0001",
-    "design_id": "GOLD0001",
-    "name": "Gold Ring",
-    "type": "Ring",
-    "collection": "Gold",
-    "description": "",
-    "image": "backend/catalogue/gold/61c372a8ae68.jpg"
+    "type": "LAD",
+    "image_url": "/catalogue-image/gold/J031.jpeg"
   },
   {
     "id": "J032",
-    "design_id": "J032",
-    "name": "Gold Singleton Ring",
-    "design_name": "Gold Singleton Ring",
     "collection": "Gold",
-    "type": "CUTTING CHARMS",
     "description": "",
+    "design_id": "J032",
+    "design_name": "Gold Singleton Ring",
     "filename": "J032.png",
-    "image_path": "C:\\Users\\SEJAL LEWIS\\Pictures\\Projects\\JewelleryMatcher_v2\\Jewellery_Matcher\\backend\\catalogue\\gold\\J032.png"
+    "image_path": "C:\\Users\\SEJAL LEWIS\\Pictures\\Projects\\JewelleryMatcher_v2\\Jewellery_Matcher\\backend\\catalogue\\gold\\J032.png",
+    "name": "Gold Singleton Ring",
+    "type": "CUTTING CHARMS",
+    "image_url": "/catalogue-image/gold/J032.png",
+    "image": "J032.png"
+  },
+  {
+    "id": "J033",
+    "ai_processed_at": "2026-10-02T07:10:36.807673+00:00",
+    "ai_queued_at": "2026-10-02T06:10:09.435602+00:00",
+    "ai_status": "ready",
+    "collection": "Gold",
+    "description": "",
+    "design_id": "J033",
+    "design_name": "Gold test 1",
+    "filename": "J033.jpg",
+    "image_path": "C:\\Users\\SEJAL LEWIS\\Pictures\\Projects\\JewelleryMatcher_v2\\Jewellery_Matcher\\backend\\catalogue\\gold\\J033.jpg",
+    "name": "Gold test 1",
+    "type": "LAD",
+    "image_url": "/catalogue-image/gold/J033.jpg",
+    "image": "J033.jpg"
+  },
+  {
+    "id": "J034",
+    "ai_processed_at": "2026-10-02T07:10:36.807673+00:00",
+    "ai_queued_at": "2026-10-02T06:22:51.653887+00:00",
+    "ai_status": "ready",
+    "collection": "Gold",
+    "description": "",
+    "design_id": "J034",
+    "design_name": "Gold Test 2",
+    "filename": "J034.jpg",
+    "image_path": "C:\\Users\\SEJAL LEWIS\\Pictures\\Projects\\JewelleryMatcher_v2\\Jewellery_Matcher\\backend\\catalogue\\gold\\J034.jpg",
+    "name": "Gold Test 2",
+    "type": "SSG",
+    "image_url": "/catalogue-image/gold/J034.jpg",
+    "image": "J034.jpg"
+  },
+  {
+    "id": "J035",
+    "ai_processed_at": "2026-10-02T07:10:36.807673+00:00",
+    "ai_queued_at": "2026-10-02T06:23:21.271959+00:00",
+    "ai_status": "ready",
+    "collection": "Gold",
+    "description": "",
+    "design_id": "J035",
+    "design_name": "Gold Test 3",
+    "filename": "J035.jpeg",
+    "image_path": "C:\\Users\\SEJAL LEWIS\\Pictures\\Projects\\JewelleryMatcher_v2\\Jewellery_Matcher\\backend\\catalogue\\gold\\J035.jpeg",
+    "name": "Gold Test 3",
+    "type": "GBR",
+    "image_url": "/catalogue-image/gold/J035.jpeg",
+    "image": "J035.jpeg"
+  },
+  {
+    "id": "J036",
+    "ai_processed_at": "2026-10-02T07:10:36.807673+00:00",
+    "ai_queued_at": "2026-10-02T06:23:59.719400+00:00",
+    "ai_status": "ready",
+    "collection": "Gold",
+    "description": "",
+    "design_id": "J036",
+    "design_name": "Gold Test 4",
+    "filename": "J036.jpg",
+    "image_path": "C:\\Users\\SEJAL LEWIS\\Pictures\\Projects\\JewelleryMatcher_v2\\Jewellery_Matcher\\backend\\catalogue\\gold\\J036.jpg",
+    "name": "Gold Test 4",
+    "type": "HIGHPOLISHCHARMS",
+    "image_url": "/catalogue-image/gold/J036.jpg",
+    "image": "J036.jpg"
+  },
+  {
+    "id": "J037",
+    "ai_processed_at": "2026-10-02T07:10:36.807673+00:00",
+    "ai_queued_at": "2026-10-02T06:29:44.133997+00:00",
+    "ai_status": "ready",
+    "collection": "Gold",
+    "description": "",
+    "design_id": "J037",
+    "design_name": "Gold Test 5",
+    "filename": "J037.jpg",
+    "image_path": "C:\\Users\\SEJAL LEWIS\\Pictures\\Projects\\JewelleryMatcher_v2\\Jewellery_Matcher\\backend\\catalogue\\gold\\J037.jpg",
+    "name": "Gold Test 5",
+    "type": "OTHERS EXTRA",
+    "image_url": "/catalogue-image/gold/J037.jpg",
+    "image": "J037.jpg"
+  },
+  {
+    "id": "J039",
+    "ai_processed_at": "2026-10-02T07:10:36.807673+00:00",
+    "ai_queued_at": "2026-10-02T06:31:12.212831+00:00",
+    "ai_status": "ready",
+    "collection": "Prototype",
+    "description": "",
+    "design_id": "J039",
+    "design_name": "Prototype1",
+    "filename": "J039.jpg",
+    "image_path": "C:\\Users\\SEJAL LEWIS\\Pictures\\Projects\\JewelleryMatcher_v2\\Jewellery_Matcher\\backend\\catalogue\\prototype\\J039.jpg",
+    "name": "Prototype1",
+    "type": "LCH",
+    "image_url": "/catalogue-image/prototype/J039.jpg",
+    "image": "J039.jpg"
+  },
+  {
+    "id": "J041",
+    "ai_processed_at": "2026-10-02T07:10:36.807673+00:00",
+    "ai_queued_at": "2026-10-02T06:31:55.068153+00:00",
+    "ai_status": "ready",
+    "collection": "Prototype",
+    "description": "",
+    "design_id": "J041",
+    "design_name": "Prototype3",
+    "filename": "J041.jpg",
+    "image_path": "C:\\Users\\SEJAL LEWIS\\Pictures\\Projects\\JewelleryMatcher_v2\\Jewellery_Matcher\\backend\\catalogue\\prototype\\J041.jpg",
+    "name": "Prototype3",
+    "type": "WB",
+    "image_url": "/catalogue-image/prototype/J041.jpg",
+    "image": "J041.jpg"
+  },
+  {
+    "id": "J042",
+    "ai_processed_at": "2026-10-02T07:10:36.807673+00:00",
+    "ai_queued_at": "2026-10-02T06:32:12.921101+00:00",
+    "ai_status": "ready",
+    "collection": "Prototype",
+    "description": "",
+    "design_id": "J042",
+    "design_name": "Prototype5",
+    "filename": "J042.jpg",
+    "image_path": "C:\\Users\\SEJAL LEWIS\\Pictures\\Projects\\JewelleryMatcher_v2\\Jewellery_Matcher\\backend\\catalogue\\prototype\\J042.jpg",
+    "name": "Prototype5",
+    "type": "SSL",
+    "image_url": "/catalogue-image/prototype/J042.jpg",
+    "image": "J042.jpg"
+  },
+  {
+    "id": "J044",
+    "design_id": "J044",
+    "name": "Mongodb Test",
+    "design_name": "Mongodb Test",
+    "collection": "Prototype",
+    "type": "WB",
+    "description": "test",
+    "filename": "J044.jpg",
+    "image_path": "C:\\Users\\SEJAL LEWIS\\Pictures\\Projects\\JewelleryMatcher_v2\\Jewellery_Matcher\\backend\\catalogue\\prototype\\J044.jpg",
+    "ai_status": "ready",
+    "ai_queued_at": "2026-10-02T10:29:39.656298+00:00",
+    "image_url": "/catalogue-image/prototype/J044.jpg",
+    "image": "J044.jpg",
+    "ai_processed_at": "2026-10-02T11:29:45.519992+00:00"
   }
 ]
